@@ -1,0 +1,4 @@
+[submodule "lib/GeminiDotnet"]
+	path = lib/GeminiDotnet
+	url = https://github.com/StevanFreeborn/GeminiDotnet.git
+	branch = forked
