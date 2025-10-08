@@ -8,10 +8,18 @@
     <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251002.1" />
     <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-preview.251002.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\GeminiDotnet\src\GeminiDotnet.Extensions.AI\GeminiDotnet.Extensions.AI.csproj" />
+    <ProjectReference
+      Include="..\..\lib\GeminiDotnet\src\GeminiDotnet.Extensions.AI\GeminiDotnet.Extensions.AI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
