@@ -7,7 +7,7 @@ namespace Casper.Console.Write;
 
 internal class Writer :
   ReflectingExecutor<Writer>,
-  IMessageHandler<string>
+  IMessageHandler<string, string>
 {
   protected Writer(
     IChatClient client,
@@ -21,12 +21,14 @@ internal class Writer :
     return new(client, null);
   }
 
-  public async ValueTask HandleAsync(
+  public async ValueTask<string> HandleAsync(
     string message,
     IWorkflowContext context,
     CancellationToken cancellationToken
   )
   {
-    await context.YieldOutputAsync(message, cancellationToken);
+    System.Console.WriteLine($"Writer received message: {message}");
+    await Task.Delay(1000, cancellationToken);
+    return message;
   }
 }

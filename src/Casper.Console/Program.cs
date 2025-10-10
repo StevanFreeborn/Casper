@@ -1,4 +1,10 @@
-﻿using GeminiDotnet;
+﻿using Casper.Console.Common;
+using Casper.Console.Critique;
+using Casper.Console.Edit;
+using Casper.Console.Research;
+using Casper.Console.Write;
+
+using GeminiDotnet;
 using GeminiDotnet.Extensions.AI;
 
 using Microsoft.Agents.AI.Workflows;
@@ -7,9 +13,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-
-using Casper.Console.Write;
-using Casper.Console.Research;
 
 var host = Host.CreateDefaultBuilder(args)
   .ConfigureAppConfiguration(static c => c.SetBasePath(AppContext.BaseDirectory))
@@ -35,10 +38,26 @@ var chatClient = host.Services.GetRequiredService<IChatClient>();
 
 var researcher = Researcher.From(chatClient);
 var writer = Writer.From(chatClient);
+var editor = Editor.From(chatClient);
+var critic = Critic.From(chatClient);
 
 var workflow = await new WorkflowBuilder(researcher)
   .AddEdge(researcher, writer)
-  .WithOutputFrom(writer)
+  .AddEdge(writer, editor)
+  .AddEdge(
+    editor,
+    writer,
+    static (object? data) =>
+      data is Result result && result.IsFailure
+  )
+  .AddEdge(editor, critic)
+  .AddEdge(
+    critic,
+    writer,
+    static (object? data) =>
+      data is Result result && result.IsFailure
+  )
+  .WithOutputFrom(critic)
   .BuildAsync<ChatMessage>();
 
 await using var run = await InProcessExecution.StreamAsync(workflow, new ChatMessage(ChatRole.User, "Hello there"));
