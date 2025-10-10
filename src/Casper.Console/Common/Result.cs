@@ -27,7 +27,7 @@ internal class Result
     }
 
     IsSuccess = isSuccess;
-    _error = error ?? new Exception();
+    _error = error ?? default!;
   }
 
   public static Result Success()
@@ -66,7 +66,7 @@ internal class Result<T> : Result
     {
       if (IsSuccess is false)
       {
-        throw new InvalidOperationException("Cannot access the value of a failed result. Check {nameof(Error)} property for more details.");
+        throw new InvalidOperationException($"Cannot access the value of a failed result. Check {nameof(Error)} property for more details.");
       }
 
       return _value;
@@ -75,6 +75,16 @@ internal class Result<T> : Result
 
   protected internal Result(T value, bool isSuccess, Exception? exception) : base(isSuccess, exception)
   {
+    if (isSuccess is false && value is not null)
+    {
+      throw new InvalidOperationException("A failed result cannot have a value.");
+    }
+
+    if (isSuccess && value is null)
+    {
+      throw new InvalidOperationException("A successful result must have a value.");
+    }
+
     _value = value;
   }
 }
