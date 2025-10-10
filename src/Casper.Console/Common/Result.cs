@@ -1,90 +1,12 @@
 namespace Casper.Console.Common;
 
-internal class Result
+internal abstract class Result
 {
-  private readonly Exception _error;
-
-  public bool IsSuccess { get; }
+  public bool IsSuccess { get; protected set; }
   public bool IsFailure => !IsSuccess;
-  public Exception Error
-  {
-    get
-    {
-      if (IsSuccess)
-      {
-        throw new InvalidOperationException("Cannot access the error of a successful result.");
-      }
 
-      return _error;
-    }
-  }
-
-  protected Result(bool isSuccess, Exception? error)
-  {
-    if (isSuccess && error is not null)
-    {
-      throw new InvalidOperationException($"A successful result cannot have an {nameof(error)}");
-    }
-
-    IsSuccess = isSuccess;
-    _error = error ?? default!;
-  }
-
-  public static Result Success()
-  {
-    return new(true, null);
-  }
-
-  public static Result Failure(string errorMessage)
-  {
-    return new(false, new Exception(errorMessage));
-  }
-
-  public static Result Failure(Exception error)
-  {
-    return new(false, error);
-  }
-
-  public static Result<T> Success<T>(T value)
-  {
-    return new Result<T>(value, true, null);
-  }
-
-  public static Result<T> Failure<T>(Exception exception)
-  {
-    return new Result<T>(default!, false, exception);
-  }
-}
-
-internal class Result<T> : Result
-{
-  private readonly T _value;
-
-  public T Value
-  {
-    get
-    {
-      if (IsSuccess is false)
-      {
-        throw new InvalidOperationException($"Cannot access the value of a failed result. Check {nameof(Error)} property for more details.");
-      }
-
-      return _value;
-    }
-  }
-
-  protected internal Result(T value, bool isSuccess, Exception? exception) : base(isSuccess, exception)
-  {
-    if (isSuccess is false && value is not null)
-    {
-      throw new InvalidOperationException("A failed result cannot have a value.");
-    }
-
-    if (isSuccess && value is null)
-    {
-      throw new InvalidOperationException("A successful result must have a value.");
-    }
-
-    _value = value;
-  }
+  public static Result Ok<T>(T value) => new Success<T>(value);
+  public static Result Ok() => new Success();
+  public static Result Fail(Exception exception) => new Failure(exception);
+  public static Result Fail(string message) => new Failure(message);
 }

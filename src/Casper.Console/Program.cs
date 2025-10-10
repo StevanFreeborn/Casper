@@ -44,19 +44,9 @@ var critic = Critic.From(chatClient);
 var workflow = await new WorkflowBuilder(researcher)
   .AddEdge(researcher, writer)
   .AddEdge(writer, editor)
-  .AddEdge(
-    editor,
-    writer,
-    static (object? data) =>
-      data is Result result && result.IsFailure
-  )
+  .AddEdge(editor, writer, static (object? data) => data is Failure)
   .AddEdge(editor, critic)
-  .AddEdge(
-    critic,
-    writer,
-    static (object? data) =>
-      data is Result result && result.IsFailure
-  )
+  .AddEdge(critic, writer, static (object? data) => data is Failure)
   .WithOutputFrom(critic)
   .BuildAsync<ChatMessage>();
 
