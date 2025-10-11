@@ -1,6 +1,7 @@
 ﻿using Casper.Console.Common;
 using Casper.Console.Critique;
 using Casper.Console.Edit;
+using Casper.Console.Interview;
 using Casper.Console.Research;
 using Casper.Console.Write;
 
@@ -36,33 +37,39 @@ var host = Host.CreateDefaultBuilder(args)
 
 var chatClient = host.Services.GetRequiredService<IChatClient>();
 
+var user = RequestPort.Create<Question, ChatMessage>("user");
+var interviewer = Interviewer.From(chatClient);
 var researcher = Researcher.From(chatClient);
 var writer = Writer.From(chatClient);
 var editor = Editor.From(chatClient);
 var critic = Critic.From(chatClient);
 
-var workflow = await new WorkflowBuilder(researcher)
+var workflow = await new WorkflowBuilder(user)
+  .AddEdge(user, interviewer)
+  .AddEdge(interviewer, user,
+    static (object? data) => data is Question
+  )
+  .AddEdge(interviewer, researcher, static (object? data) => data is Success)
   .AddEdge(researcher, writer)
   .AddEdge(writer, editor)
   .AddEdge(editor, writer, static (object? data) => data is Failure)
   .AddEdge(editor, critic)
   .AddEdge(critic, writer, static (object? data) => data is Failure)
   .WithOutputFrom(critic)
-  .BuildAsync<ChatMessage>();
+  .BuildAsync<Question>();
 
-await using var run = await InProcessExecution.StreamAsync(workflow, new ChatMessage(ChatRole.User, "Hello there"));
+await using var run = await InProcessExecution.StreamAsync(
+  workflow,
+  new Question("What would you like to write about?")
+);
 
-await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
-
-await using StreamingRun handle = await InProcessExecution.StreamAsync(workflow, NumberSignal.Init).ConfigureAwait(false);
-
-await foreach (var evt in handle.WatchStreamAsync())
+await foreach (var evt in run.WatchStreamAsync())
 {
   switch (evt)
   {
     case RequestInfoEvent requestInputEvt:
       var response = AskUserQuestion(requestInputEvt.Request);
-      await handle.SendResponseAsync(response);
+      await run.SendResponseAsync(response);
       break;
 
     case WorkflowOutputEvent outputEvt:
@@ -75,11 +82,11 @@ await foreach (var evt in handle.WatchStreamAsync())
 
 static ExternalResponse AskUserQuestion(ExternalRequest request)
 {
-  if (request.DataIs<string>(out var question))
+  if (request.DataIs<Question>(out var question))
   {
     string? answer = null;
 
-    Console.WriteLine($"Casper: {question}");
+    Console.WriteLine($"Casper: {question.Message}");
 
     while (string.IsNullOrWhiteSpace(answer))
     {
@@ -87,7 +94,7 @@ static ExternalResponse AskUserQuestion(ExternalRequest request)
       answer = Console.ReadLine();
     }
 
-    return request.CreateResponse(answer);
+    return request.CreateResponse<ChatMessage>(new(ChatRole.User, answer));
   }
 
   throw new InvalidOperationException("Unknown request data type");
