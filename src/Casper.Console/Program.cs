@@ -54,10 +54,41 @@ await using var run = await InProcessExecution.StreamAsync(workflow, new ChatMes
 
 await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
 
-await foreach (var evt in run.WatchStreamAsync())
+await using StreamingRun handle = await InProcessExecution.StreamAsync(workflow, NumberSignal.Init).ConfigureAwait(false);
+
+await foreach (var evt in handle.WatchStreamAsync())
 {
-  if (evt is WorkflowOutputEvent outputEvent)
+  switch (evt)
   {
-    Console.WriteLine($"{outputEvent}");
+    case RequestInfoEvent requestInputEvt:
+      var response = AskUserQuestion(requestInputEvt.Request);
+      await handle.SendResponseAsync(response);
+      break;
+
+    case WorkflowOutputEvent outputEvt:
+      Console.WriteLine($"Workflow completed with result: {outputEvt.Data}");
+      return;
+    default:
+      break;
   }
+}
+
+static ExternalResponse AskUserQuestion(ExternalRequest request)
+{
+  if (request.DataIs<string>(out var question))
+  {
+    string? answer = null;
+
+    Console.WriteLine($"Casper: {question}");
+
+    while (string.IsNullOrWhiteSpace(answer))
+    {
+      Console.Write("> ");
+      answer = Console.ReadLine();
+    }
+
+    return request.CreateResponse(answer);
+  }
+
+  throw new InvalidOperationException("Unknown request data type");
 }

@@ -2,20 +2,20 @@ using Microsoft.Agents.AI.Workflows;
 using Microsoft.Agents.AI.Workflows.Reflection;
 using Microsoft.Extensions.AI;
 
-namespace Casper.Console.Research;
+namespace Casper.Console.Interview;
 
-internal class Researcher :
-  ReflectingExecutor<Researcher>,
+internal class Interviewer :
+  ReflectingExecutor<Interviewer>,
   IMessageHandler<ChatMessage, string>
 {
-  protected Researcher(
+  protected Interviewer(
     IChatClient client,
     ExecutorOptions? options = null
-  ) : base(nameof(Researcher), options)
+  ) : base(nameof(Interviewer), options)
   {
   }
 
-  public static Researcher From(IChatClient client) => new(client, null);
+  public static Interviewer From(IChatClient client) => new(client, null);
 
   public async ValueTask<string> HandleAsync(
     ChatMessage message,
@@ -23,8 +23,8 @@ internal class Researcher :
     CancellationToken cancellationToken
   )
   {
-    System.Console.WriteLine($"Researcher received message: {message.Text}");
+    System.Console.WriteLine($"Interviewer received message: {message.Text}");
     await Task.Delay(1000, cancellationToken);
-    return "Hello from Researcher";
+    return message.Text;
   }
 }

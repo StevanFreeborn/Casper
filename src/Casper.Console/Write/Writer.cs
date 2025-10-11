@@ -1,4 +1,3 @@
-
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Agents.AI.Workflows.Reflection;
 using Microsoft.Extensions.AI;
@@ -16,10 +15,7 @@ internal class Writer :
   {
   }
 
-  public static Writer From(IChatClient client)
-  {
-    return new(client, null);
-  }
+  public static Writer From(IChatClient client) => new(client, null);
 
   public async ValueTask<string> HandleAsync(
     string message,

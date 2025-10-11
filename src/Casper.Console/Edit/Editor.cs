@@ -15,10 +15,7 @@ internal class Editor :
   {
   }
 
-  public static Editor From(IChatClient client)
-  {
-    return new(client, null);
-  }
+  public static Editor From(IChatClient client) => new(client, null);
 
   public async ValueTask<string> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
   {

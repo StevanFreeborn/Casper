@@ -15,10 +15,7 @@ internal class Critic :
   {
   }
 
-  public static Critic From(IChatClient client)
-  {
-    return new(client, null);
-  }
+  public static Critic From(IChatClient client) => new(client, null);
 
   public async ValueTask HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
   {
