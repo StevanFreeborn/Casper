@@ -1,8 +1,12 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+using Casper.Console.Common;
+
+using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Agents.AI.Workflows.Reflection;
 using Microsoft.Extensions.AI;
-using Casper.Console.Common;
-using Microsoft.Agents.AI;
 
 namespace Casper.Console.Interview;
 
@@ -18,7 +22,15 @@ internal class Interviewer :
     ExecutorOptions? options = null
   ) : base(nameof(Interviewer), options)
   {
-    _agent = new ChatClientAgent(client, Prompt.SystemInstructions);
+    var agentOptions = new ChatClientAgentOptions(Prompt.SystemInstructions)
+    {
+      ChatOptions = new()
+      {
+        ResponseFormat = ChatResponseFormat.ForJsonSchema<InterviewerResponse>()
+      }
+    };
+
+    _agent = new ChatClientAgent(client, agentOptions);
     _thread = _agent.GetNewThread();
   }
 
@@ -30,21 +42,34 @@ internal class Interviewer :
     CancellationToken cancellationToken
   )
   {
-    await Task.Delay(1000, cancellationToken);
+    var agtRes = await _agent.RunAsync(message.Text, _thread, cancellationToken: cancellationToken);
+    var intrRes = JsonSerializer.Deserialize<InterviewerResponse>(agtRes.Text);
 
-    var needMoreInformation = true;
-
-    if (needMoreInformation)
+    if (intrRes is null)
     {
-      await context.SendMessageAsync(question, cancellationToken: cancellationToken);
-      return Result.Fail(question);
+      throw new ApplicationException("Big problem");
     }
 
-    return Result.Ok<TopicSummary>(new());
+    if (intrRes.NeedMoreInfo)
+    {
+      await context.SendMessageAsync(new Question(intrRes.Question), cancellationToken: cancellationToken);
+      return Result.Fail(intrRes.Question);
+    }
+
+    return Result.Ok<Topic>(new(intrRes.TopicSummary));
   }
 }
 
-internal record TopicSummary();
+internal record InterviewerResponse(
+  [property: JsonPropertyName("needMoreInfo")]
+  bool NeedMoreInfo,
+  [property: JsonPropertyName("question")]
+  string Question,
+  [property: JsonPropertyName("topicSummary")]
+  string TopicSummary
+);
+
+internal record Topic(string Summary);
 
 internal class Question : Exception
 {

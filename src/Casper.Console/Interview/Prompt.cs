@@ -2,10 +2,18 @@ using Microsoft.Extensions.AI;
 
 namespace Casper.Console.Interview;
 
+// TODO: Work on this prompt so that
+// the LLM does a better job extracting
+// the necessary information. The metric
+// we are looking for is the fewest
+// turns to the required information.
+// The LLM should try as hard as possible
+// to extract and infer the necessary 
+// information instead of explicitly asking
+// for it.
+
 internal class Prompt
 {
-  private static string MessageSeparator => string.Concat(Enumerable.Repeat(Environment.NewLine, 2));
-
   public const string SystemInstructions = """
   **# SYSTEM INSTRUCTIONS**
 
@@ -74,13 +82,5 @@ internal class Prompt
   **Desired Tone & Voice:** [Describe the requested style, using keywords like: Casual, Formal, Technical, Inspirational, Humorous, Empathetic, etc.]
 
   **Call to Action (CTA):** [State the specific action the reader should take, e.g., "Sign up for the newsletter," "Leave a comment with their own experience," "Download the free guide."]
-
-  ---
-  """;
-
-  public static string Get(List<ChatMessage> messages) => $"""
-  `[BEGIN CONVERSATION HISTORY]`
-  {string.Join(MessageSeparator, messages)}
-  `[END CONVERSATION HISTORY]`
   """;
 }

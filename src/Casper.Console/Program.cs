@@ -46,9 +46,7 @@ var critic = Critic.From(chatClient);
 
 var workflow = await new WorkflowBuilder(user)
   .AddEdge(user, interviewer)
-  .AddEdge(interviewer, user,
-    static (object? data) => data is Question
-  )
+  .AddEdge(interviewer, user, static (object? data) => data is Question)
   .AddEdge(interviewer, researcher, static (object? data) => data is Success)
   .AddEdge(researcher, writer)
   .AddEdge(writer, editor)
