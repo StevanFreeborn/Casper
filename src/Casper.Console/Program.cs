@@ -8,6 +8,7 @@ using Casper.Console.Write;
 using GeminiDotnet;
 using GeminiDotnet.Extensions.AI;
 
+using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
@@ -20,7 +21,9 @@ var host = Host.CreateDefaultBuilder(args)
   .ConfigureServices(static (ctx, srvcs) =>
   {
     srvcs.Configure<GeminiClientOptions>(ctx.Configuration.GetSection(nameof(GeminiClientOptions)));
+
     srvcs.AddHttpClient();
+
     srvcs.AddSingleton<IChatClient, GeminiChatClient>(static sp =>
     {
       var options = sp.GetRequiredService<IOptions<GeminiClientOptions>>();
@@ -32,14 +35,23 @@ var host = Host.CreateDefaultBuilder(args)
       var geminiClient = new GeminiClient(httpClient, options.Value);
       return new GeminiChatClient(geminiClient);
     });
+
+    // TODO: .AddAgents();
+    // TODO: Maybe use agent factory?
+    srvcs.AddKeyedSingleton<AIAgent, InterviewAgent>(nameof(InterviewAgent));
+    srvcs.AddKeyedSingleton<AIAgent, ResearchAgent>(nameof(ResearchAgent));
+
+    // TODO: .AddExecutors();
+    srvcs.AddSingleton<Interviewer>();
+    srvcs.AddSingleton<Researcher>();
   })
   .Build();
 
 var chatClient = host.Services.GetRequiredService<IChatClient>();
 
 var user = RequestPort.Create<Question, ChatMessage>("user");
-var interviewer = Interviewer.From(chatClient);
-var researcher = Researcher.From(chatClient);
+var interviewer = host.Services.GetRequiredService<Interviewer>();
+var researcher = host.Services.GetRequiredService<Researcher>();
 var writer = Writer.From(chatClient);
 var editor = Editor.From(chatClient);
 var critic = Critic.From(chatClient);

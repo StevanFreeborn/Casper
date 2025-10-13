@@ -30,4 +30,14 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="appsettings.Test.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Casper.Console\Casper.Console.csproj" />
+  </ItemGroup>
+
 </Project>

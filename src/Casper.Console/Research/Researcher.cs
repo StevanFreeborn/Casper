@@ -6,7 +6,7 @@ using Casper.Console.Interview;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Agents.AI.Workflows.Reflection;
-using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Casper.Console.Research;
 
@@ -17,24 +17,15 @@ internal class Researcher :
   private readonly AIAgent _agent;
   private readonly AgentThread _thread;
 
-  protected Researcher(
-    IChatClient client,
+  public Researcher(
+    [FromKeyedServices(nameof(ResearchAgent))]
+    AIAgent agent,
     ExecutorOptions? options = null
   ) : base(nameof(Researcher), options)
   {
-    var agentOptions = new ChatClientAgentOptions(Prompt.SystemInstructions)
-    {
-      ChatOptions = new()
-      {
-        ResponseFormat = ChatResponseFormat.ForJsonSchema<Research>(),
-        Tools = [new HostedWebSearchTool()],
-      }
-    };
-    _agent = new ChatClientAgent(client, agentOptions);
+    _agent = agent;
     _thread = _agent.GetNewThread();
   }
-
-  public static Researcher From(IChatClient client) => new(client, null);
 
   public async ValueTask<string> HandleAsync(
     Success<Topic> result,
@@ -43,7 +34,7 @@ internal class Researcher :
   )
   {
     var response = await _agent.RunAsync(result.Value.Summary, _thread, cancellationToken: cancellationToken);
-    var research = JsonSerializer.Deserialize<Research>(response.Text);
+    var research = JsonSerializer.Deserialize<ResearchAgentResponse>(response.Text);
 
     if (research is null)
     {
@@ -53,5 +44,3 @@ internal class Researcher :
     return research.Results;
   }
 }
-
-internal record Research(string Results);

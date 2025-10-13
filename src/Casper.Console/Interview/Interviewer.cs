@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 using Casper.Console.Common;
 
@@ -7,6 +6,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Agents.AI.Workflows.Reflection;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Casper.Console.Interview;
 
@@ -17,24 +17,15 @@ internal class Interviewer :
   private readonly AIAgent _agent;
   private readonly AgentThread _thread;
 
-  protected Interviewer(
-    IChatClient client,
+  public Interviewer(
+    [FromKeyedServices(nameof(InterviewAgent))]
+    AIAgent agent,
     ExecutorOptions? options = null
   ) : base(nameof(Interviewer), options)
   {
-    var agentOptions = new ChatClientAgentOptions(Prompt.SystemInstructions)
-    {
-      ChatOptions = new()
-      {
-        ResponseFormat = ChatResponseFormat.ForJsonSchema<InterviewerResponse>()
-      }
-    };
-
-    _agent = new ChatClientAgent(client, agentOptions);
-    _thread = _agent.GetNewThread();
+    _agent = agent;
+    _thread = agent.GetNewThread();
   }
-
-  public static Interviewer From(IChatClient client) => new(client, null);
 
   public async ValueTask<Result> HandleAsync(
     ChatMessage message,
@@ -43,7 +34,7 @@ internal class Interviewer :
   )
   {
     var agtRes = await _agent.RunAsync(message.Text, _thread, cancellationToken: cancellationToken);
-    var intrRes = JsonSerializer.Deserialize<InterviewerResponse>(agtRes.Text);
+    var intrRes = JsonSerializer.Deserialize<InterviewAgentResponse>(agtRes.Text);
 
     if (intrRes is null)
     {
@@ -57,31 +48,5 @@ internal class Interviewer :
     }
 
     return Result.Ok<Topic>(new(intrRes.TopicSummary));
-  }
-}
-
-internal record InterviewerResponse(
-  [property: JsonPropertyName("needMoreInfo")]
-  bool NeedMoreInfo,
-  [property: JsonPropertyName("question")]
-  string Question,
-  [property: JsonPropertyName("topicSummary")]
-  string TopicSummary
-);
-
-internal record Topic(string Summary);
-
-internal class Question : Exception
-{
-  public Question() : base("Can you tell me more about that?")
-  {
-  }
-
-  public Question(string message) : base(message)
-  {
-  }
-
-  public Question(string message, Exception innerException) : base(message, innerException)
-  {
   }
 }
