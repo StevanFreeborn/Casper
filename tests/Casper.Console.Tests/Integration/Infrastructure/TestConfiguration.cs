@@ -1,16 +1,21 @@
+using GeminiDotnet;
+
 using Microsoft.Extensions.Configuration;
 
 namespace Casper.Console.Tests.Integration.Infrastructure;
 
-internal class TestConfiguration
+public class TestConfiguration
 {
   private const string ConfigFileName = "appsettings.Test.json";
-  protected IConfiguration Config { get; }
+  public GeminiClientOptions Options { get; }
 
   public TestConfiguration()
   {
-    Config = new ConfigurationBuilder()
+    var config = new ConfigurationBuilder()
       .AddJsonFile(ConfigFileName, optional: false)
       .Build();
+
+    Options = config.GetSection(nameof(GeminiClientOptions)).Get<GeminiClientOptions>() ??
+      throw new InvalidOperationException($"Could not load {nameof(GeminiClientOptions)} from {ConfigFileName}");
   }
 }

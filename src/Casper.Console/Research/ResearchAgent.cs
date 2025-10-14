@@ -9,11 +9,10 @@ internal sealed class ResearchAgent : AgentFacade
 {
   public ResearchAgent(IChatClient client)
   {
-    var agentOptions = new ChatClientAgentOptions(Prompt.SystemInstructions)
+    var agentOptions = new ChatClientAgentOptions("Always search the web to answer questions. Be concise and accurate.")
     {
       ChatOptions = new()
       {
-        ResponseFormat = ChatResponseFormat.ForJsonSchema<ResearchAgentResponse>(),
         Tools = [new HostedWebSearchTool()],
       }
     };
