@@ -9,7 +9,7 @@ internal sealed class ResearchAgent : AgentFacade
 {
   public ResearchAgent(IChatClient client)
   {
-    var agentOptions = new ChatClientAgentOptions("Always search the web to answer questions. Be concise and accurate.")
+    var agentOptions = new ChatClientAgentOptions(Prompt.SystemInstructions)
     {
       ChatOptions = new()
       {
