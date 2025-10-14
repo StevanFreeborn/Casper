@@ -9,6 +9,6 @@ public abstract class IntegrationTest : IClassFixture<TestConfiguration>
   {
     ArgumentNullException.ThrowIfNull(config);
 
-    GeminiChatClient = new GeminiChatClient(config.Options);
+    GeminiChatClient = new GeminiChatClient(config.GeminiOptions);
   }
 }

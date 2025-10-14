@@ -22,10 +22,12 @@
     // TODO: Maybe use agent factory?
     srvcs.AddKeyedSingleton<AIAgent, InterviewAgent>(nameof(InterviewAgent));
     srvcs.AddKeyedSingleton<AIAgent, ResearchAgent>(nameof(ResearchAgent));
+    srvcs.AddKeyedSingleton<AIAgent, WriterAgent>(nameof(WriterAgent));
 
     // TODO: .AddExecutors();
     srvcs.AddSingleton<Interviewer>();
     srvcs.AddSingleton<Researcher>();
+    srvcs.AddSingleton<Writer>();
   })
   .Build();
 
@@ -34,7 +36,7 @@ var chatClient = host.Services.GetRequiredService<IChatClient>();
 var user = RequestPort.Create<Question, ChatMessage>("user");
 var interviewer = host.Services.GetRequiredService<Interviewer>();
 var researcher = host.Services.GetRequiredService<Researcher>();
-var writer = Writer.From(chatClient);
+var writer = host.Services.GetRequiredService<Writer>();
 var editor = Editor.From(chatClient);
 var critic = Critic.From(chatClient);
 

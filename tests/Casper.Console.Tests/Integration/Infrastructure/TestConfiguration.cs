@@ -4,7 +4,8 @@ namespace Casper.Console.Tests.Integration.Infrastructure;
 public class TestConfiguration
 {
   private const string ConfigFileName = "appsettings.Test.json";
-  public GeminiClientOptions Options { get; }
+  public GeminiClientOptions GeminiOptions { get; }
+  public AgentUnderTestOptions AutOptions { get; }
 
   public TestConfiguration()
   {
@@ -12,7 +13,10 @@ public class TestConfiguration
       .AddJsonFile(ConfigFileName, optional: false)
       .Build();
 
-    Options = config.GetSection(nameof(GeminiClientOptions)).Get<GeminiClientOptions>() ??
+    GeminiOptions = config.GetSection(nameof(GeminiClientOptions)).Get<GeminiClientOptions>() ??
       throw new InvalidOperationException($"Could not load {nameof(GeminiClientOptions)} from {ConfigFileName}");
+
+    AutOptions = config.GetSection(nameof(AgentUnderTestOptions)).Get<AgentUnderTestOptions>()
+      ?? new AgentUnderTestOptions();
   }
 }

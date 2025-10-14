@@ -1,3 +1,5 @@
+namespace Casper.Console.Write;
+
 internal sealed partial class WriterAgent
 {
   private static class Prompt

@@ -17,5 +17,12 @@ internal sealed class Writer :
     _thread = _agent.GetNewThread();
   }
 
-  public ValueTask<string> HandleAsync(Success<TopicBrief> message, IWorkflowContext context, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+  public ValueTask<string> HandleAsync(
+    Success<TopicBrief> message,
+    IWorkflowContext context,
+    CancellationToken cancellationToken = default
+  )
+  {
+    throw new NotImplementedException();
+  }
 }
