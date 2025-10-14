@@ -1,11 +1,6 @@
-using Casper.Console.Common;
-
-using Microsoft.Agents.AI;
-using Microsoft.Extensions.AI;
-
 namespace Casper.Console.Research;
 
-internal sealed class ResearchAgent : AgentFacade
+internal sealed partial class ResearchAgent : AgentFacade
 {
   public ResearchAgent(IChatClient client)
   {

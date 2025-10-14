@@ -1,13 +1,3 @@
-using System.Text.Json;
-
-using Casper.Console.Common;
-
-using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Workflows;
-using Microsoft.Agents.AI.Workflows.Reflection;
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Casper.Console.Interview;
 
 internal class Interviewer :
@@ -47,6 +37,6 @@ internal class Interviewer :
       return Result.Fail(intrRes.Question);
     }
 
-    return Result.Ok<Topic>(new(intrRes.TopicSummary));
+    return Result.Ok<TopicBrief>(new(intrRes.TopicSummary));
   }
 }

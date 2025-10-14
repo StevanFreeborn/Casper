@@ -1,14 +1,10 @@
-using Microsoft.Agents.AI.Workflows;
-using Microsoft.Agents.AI.Workflows.Reflection;
-using Microsoft.Extensions.AI;
-
 namespace Casper.Console.Edit;
 
-internal class Editor :
+internal sealed class Editor :
   ReflectingExecutor<Editor>,
   IMessageHandler<string, string>
 {
-  protected Editor(
+  public Editor(
     IChatClient client,
     ExecutorOptions? options = null
   ) : base(nameof(Editor), options)

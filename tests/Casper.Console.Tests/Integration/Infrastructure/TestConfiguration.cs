@@ -1,6 +1,3 @@
-using GeminiDotnet;
-
-using Microsoft.Extensions.Configuration;
 
 namespace Casper.Console.Tests.Integration.Infrastructure;
 

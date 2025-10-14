@@ -1,22 +1,4 @@
-﻿using Casper.Console.Common;
-using Casper.Console.Critique;
-using Casper.Console.Edit;
-using Casper.Console.Interview;
-using Casper.Console.Research;
-using Casper.Console.Write;
-
-using GeminiDotnet;
-using GeminiDotnet.Extensions.AI;
-
-using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Workflows;
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-
-var host = Host.CreateDefaultBuilder(args)
+﻿var host = Host.CreateDefaultBuilder(args)
   .ConfigureAppConfiguration(static c => c.SetBasePath(AppContext.BaseDirectory))
   .ConfigureServices(static (ctx, srvcs) =>
   {

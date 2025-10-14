@@ -1,11 +1,6 @@
-using Casper.Console.Common;
-
-using Microsoft.Agents.AI;
-using Microsoft.Extensions.AI;
-
 namespace Casper.Console.Interview;
 
-internal sealed class InterviewAgent : AgentFacade
+internal sealed partial class InterviewAgent : AgentFacade
 {
   public InterviewAgent(IChatClient client)
   {

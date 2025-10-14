@@ -1,14 +1,10 @@
-using Microsoft.Agents.AI.Workflows;
-using Microsoft.Agents.AI.Workflows.Reflection;
-using Microsoft.Extensions.AI;
-
 namespace Casper.Console.Critique;
 
-internal class Critic :
+internal sealed class Critic :
   ReflectingExecutor<Critic>,
   IMessageHandler<string>
 {
-  protected Critic(
+  public Critic(
     IChatClient client,
     ExecutorOptions? options = null
   ) : base(nameof(Critic), options)

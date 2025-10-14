@@ -1,8 +1,3 @@
-using System.Text.Json;
-
-using Microsoft.Agents.AI;
-using Microsoft.Extensions.AI;
-
 namespace Casper.Console.Common;
 
 internal abstract class AgentFacade : AIAgent
