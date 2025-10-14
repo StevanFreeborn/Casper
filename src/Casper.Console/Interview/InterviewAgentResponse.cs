@@ -6,6 +6,6 @@ internal record InterviewAgentResponse(
   bool NeedMoreInfo,
   [property: JsonPropertyName("question")]
   string Question,
-  [property: JsonPropertyName("topicSummary")]
-  string TopicSummary
+  [property: JsonPropertyName("topic")]
+  TopicBrief Topic
 );

@@ -28,7 +28,7 @@ internal class Interviewer :
 
     if (intrRes is null)
     {
-      throw new ApplicationException("Big problem");
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
     if (intrRes.NeedMoreInfo)
@@ -37,6 +37,6 @@ internal class Interviewer :
       return Result.Fail(intrRes.Question);
     }
 
-    return Result.Ok<TopicBrief>(new(intrRes.TopicSummary));
+    return Result.Ok(intrRes.Topic);
   }
 }

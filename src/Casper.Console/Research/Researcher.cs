@@ -23,7 +23,7 @@ internal sealed class Researcher :
     CancellationToken cancellationToken
   )
   {
-    var response = await _agent.RunAsync(result.Value.Summary, _thread, cancellationToken: cancellationToken);
+    var response = await _agent.RunAsync(result.Value.ToString(), _thread, cancellationToken: cancellationToken);
     var research = JsonSerializer.Deserialize<ResearchAgentResponse>(response.Text);
 
     if (research is null)
