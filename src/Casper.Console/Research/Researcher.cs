@@ -2,7 +2,7 @@ namespace Casper.Console.Research;
 
 internal sealed class Researcher :
   ReflectingExecutor<Researcher>,
-  IMessageHandler<Success<TopicBrief>, string>
+  IMessageHandler<Success<TopicBrief>, Result>
 {
   private readonly AIAgent _agent;
   private readonly AgentThread _thread;
@@ -17,20 +17,20 @@ internal sealed class Researcher :
     _thread = _agent.GetNewThread();
   }
 
-  public async ValueTask<string> HandleAsync(
+  public async ValueTask<Result> HandleAsync(
     Success<TopicBrief> result,
     IWorkflowContext context,
     CancellationToken cancellationToken
   )
   {
-    var response = await _agent.RunAsync(result.Value.ToString(), _thread, cancellationToken: cancellationToken);
-    var research = JsonSerializer.Deserialize<ResearchAgentResponse>(response.Text);
+    var agtRes = await _agent.RunAsync(result.Value.ToString(), _thread, cancellationToken: cancellationToken);
+    var research = JsonSerializer.Deserialize<ResearchAgentResponse>(agtRes.Text);
 
     if (research is null)
     {
-      throw new ApplicationException("Uh oh, research is null");
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
-    return research.Results;
+    return Result.Ok(research.Brief);
   }
 }

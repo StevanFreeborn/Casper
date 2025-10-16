@@ -1,6 +1,6 @@
 namespace Casper.Console.Interview;
 
-internal class Interviewer :
+internal sealed class Interviewer :
   ReflectingExecutor<Interviewer>,
   IMessageHandler<ChatMessage, Result>
 {

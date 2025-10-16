@@ -1,6 +1,6 @@
 namespace Casper.Console.Interview;
 
-internal class Question : Exception
+internal sealed class Question : Exception
 {
   public Question() : base("Can you tell me more about that?")
   {

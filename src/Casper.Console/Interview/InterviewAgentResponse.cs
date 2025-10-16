@@ -1,7 +1,6 @@
-
 namespace Casper.Console.Interview;
 
-internal record InterviewAgentResponse(
+internal sealed record InterviewAgentResponse(
   [property: JsonPropertyName("needMoreInfo")]
   bool NeedMoreInfo,
   [property: JsonPropertyName("question")]

@@ -12,6 +12,7 @@ public class InterviewAgentTests : IntegrationTest
   [Fact]
   public async Task RunAsync_WhenCalled_ItShouldReturnNonNullInterviewAgentResponse()
   {
+    var thread = _aut.GetNewThread();
     var response = await _aut.RunAsync("Explain the concept of dependency injection in software development.", cancellationToken: TestContext.Current.CancellationToken);
     var interviewResponse = JsonSerializer.Deserialize<InterviewAgentResponse>(response.Text);
     interviewResponse.Should().NotBeNull();

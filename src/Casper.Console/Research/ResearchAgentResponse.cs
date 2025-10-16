@@ -1,6 +1,6 @@
 namespace Casper.Console.Research;
 
-internal record ResearchAgentResponse(
-  [property: JsonPropertyName("results")]
-  string Results
+internal sealed record ResearchAgentResponse(
+  [property: JsonPropertyName("brief")]
+  ResearchBrief Brief
 );

@@ -1,6 +1,6 @@
 namespace Casper.Console.Interview;
 
-internal record TopicBrief(
+internal sealed record TopicBrief(
   [property: JsonPropertyName("workingTitleSuggestion")]
   string WorkingTitleSuggestion,
   [property: JsonPropertyName("topic")]
