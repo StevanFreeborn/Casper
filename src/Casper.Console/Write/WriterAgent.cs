@@ -15,8 +15,3 @@ internal sealed partial class WriterAgent : AgentFacade
     Agent = new ChatClientAgent(client, agentOptions);
   }
 }
-
-internal record WriterAgentResponse(
-  [property: JsonPropertyName("content")]
-  string Content
-);
