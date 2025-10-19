@@ -2,7 +2,7 @@ namespace Casper.Console.Write;
 
 internal sealed class Writer :
   ReflectingExecutor<Writer>,
-  IMessageHandler<Success<TopicBrief>, string>
+  IMessageHandler<Success<WriterBrief>, string>
 {
   private readonly AIAgent _agent;
   private readonly AgentThread _thread;
@@ -17,12 +17,14 @@ internal sealed class Writer :
     _thread = _agent.GetNewThread();
   }
 
-  public ValueTask<string> HandleAsync(
-    Success<TopicBrief> message,
+  public async ValueTask<string> HandleAsync(
+    Success<WriterBrief> message,
     IWorkflowContext context,
     CancellationToken cancellationToken = default
   )
   {
-    throw new NotImplementedException();
+    var briefContext = message.Value.TopicBrief.ToString() + '\n' + message.Value.ResearchBrief.ToString();
+    var agtRes = await _agent.RunAsync(briefContext, _thread, cancellationToken: cancellationToken);
+    return agtRes.Text;
   }
 }
