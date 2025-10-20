@@ -14,6 +14,7 @@
       var httpClient = factory.CreateClient();
       httpClient.BaseAddress = new Uri("https://generativelanguage.googleapis.com");
       httpClient.Timeout = TimeSpan.FromMinutes(2);
+
       var geminiClient = new GeminiClient(httpClient, options.Value);
       return new GeminiChatClient(geminiClient);
     });
@@ -23,6 +24,7 @@
     srvcs.AddKeyedSingleton<AIAgent, InterviewAgent>(nameof(InterviewAgent));
     srvcs.AddKeyedSingleton<AIAgent, ResearchAgent>(nameof(ResearchAgent));
     srvcs.AddKeyedSingleton<AIAgent, WriterAgent>(nameof(WriterAgent));
+    srvcs.AddKeyedSingleton<AIAgent, EditorAgent>(nameof(EditorAgent));
 
     // TODO: .AddExecutors();
     srvcs.AddSingleton<Interviewer>();
@@ -37,7 +39,7 @@ var user = RequestPort.Create<Question, ChatMessage>("user");
 var interviewer = host.Services.GetRequiredService<Interviewer>();
 var researcher = host.Services.GetRequiredService<Researcher>();
 var writer = host.Services.GetRequiredService<Writer>();
-var editor = Editor.From(chatClient);
+var editor = host.Services.GetRequiredService<Editor>();
 var critic = Critic.From(chatClient);
 
 var workflow = await new WorkflowBuilder(user)
@@ -65,7 +67,6 @@ await foreach (var evt in run.WatchStreamAsync())
       var response = AskUserQuestion(requestInputEvt.Request);
       await run.SendResponseAsync(response);
       break;
-
     case WorkflowOutputEvent outputEvt:
       Console.WriteLine($"Workflow completed with result: {outputEvt.Data}");
       return;

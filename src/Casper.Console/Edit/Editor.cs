@@ -4,14 +4,16 @@ internal sealed class Editor :
   ReflectingExecutor<Editor>,
   IMessageHandler<string, string>
 {
+  private readonly AIAgent _agent;
+
   public Editor(
-    IChatClient client,
+    [FromKeyedServices(nameof(EditorAgent))]
+    AIAgent agent,
     ExecutorOptions? options = null
   ) : base(nameof(Editor), options)
   {
+    _agent = agent;
   }
-
-  public static Editor From(IChatClient client) => new(client, null);
 
   public async ValueTask<string> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
   {
