@@ -2,9 +2,10 @@ namespace Casper.Console.Edit;
 
 internal sealed class Editor :
   ReflectingExecutor<Editor>,
-  IMessageHandler<string, string>
+  IMessageHandler<BlogPost, Result>
 {
   private readonly AIAgent _agent;
+  private readonly AgentThread _thread;
 
   public Editor(
     [FromKeyedServices(nameof(EditorAgent))]
@@ -13,12 +14,28 @@ internal sealed class Editor :
   ) : base(nameof(Editor), options)
   {
     _agent = agent;
+    _thread = _agent.GetNewThread();
   }
 
-  public async ValueTask<string> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
+  public async ValueTask<Result> HandleAsync(
+    BlogPost message,
+    IWorkflowContext context,
+    CancellationToken cancellationToken = default
+  )
   {
-    System.Console.WriteLine($"Editor received message: {message}");
-    await Task.Delay(1000, cancellationToken);
-    return message;
+    var agtRes = await _agent.RunAsync(message.Content, _thread, cancellationToken: cancellationToken);
+    var editorRes = JsonSerializer.Deserialize<EditorAgentResponse>(agtRes.Text);
+
+    if (editorRes is null)
+    {
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
+    }
+
+    if (editorRes.HasFeedback)
+    {
+      return Result.Fail(new Feedback(editorRes.Comments));
+    }
+
+    return Result.Ok(message);
   }
 }

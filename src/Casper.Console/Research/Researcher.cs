@@ -24,13 +24,13 @@ internal sealed class Researcher :
   )
   {
     var agtRes = await _agent.RunAsync(message.Value.ToString(), _thread, cancellationToken: cancellationToken);
-    var research = JsonSerializer.Deserialize<ResearchAgentResponse>(agtRes.Text);
+    var researcherRes = JsonSerializer.Deserialize<ResearchAgentResponse>(agtRes.Text);
 
-    if (research is null)
+    if (researcherRes is null)
     {
       return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
-    return Result.Ok(new WriterBrief(message.Value, research.Brief));
+    return Result.Ok(new WriterBrief(message.Value, researcherRes.Brief));
   }
 }

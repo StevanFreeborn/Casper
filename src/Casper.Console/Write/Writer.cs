@@ -23,7 +23,7 @@ internal sealed class Writer :
     CancellationToken cancellationToken = default
   )
   {
-    var briefContext = message.Value.TopicBrief.ToString() + '\n' + message.Value.ResearchBrief.ToString();
+    var briefContext = message.Value.ToString();
     var agtRes = await _agent.RunAsync(briefContext, _thread, cancellationToken: cancellationToken);
     return agtRes.Text;
   }

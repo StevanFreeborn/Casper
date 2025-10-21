@@ -1,5 +1,8 @@
 namespace Casper.Console.Edit;
 
 internal sealed record EditorAgentResponse(
-  EditorFeedback Feedback
+  [property: JsonPropertyName("hasFeedback")]
+  bool HasFeedback,
+  [property: JsonPropertyName("comments")]
+  string Comments
 );

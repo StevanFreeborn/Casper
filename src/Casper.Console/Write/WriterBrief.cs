@@ -5,4 +5,7 @@ internal sealed record WriterBrief(
   TopicBrief TopicBrief,
   [property: JsonPropertyName("researchBrief")]
   ResearchBrief ResearchBrief
-);
+)
+{
+  public override string ToString() => TopicBrief.ToString() + '\n' + ResearchBrief.ToString();
+}

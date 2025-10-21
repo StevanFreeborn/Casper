@@ -30,6 +30,7 @@
     srvcs.AddSingleton<Interviewer>();
     srvcs.AddSingleton<Researcher>();
     srvcs.AddSingleton<Writer>();
+    srvcs.AddSingleton<Editor>();
   })
   .Build();
 
@@ -48,8 +49,8 @@ var workflow = await new WorkflowBuilder(user)
   .AddEdge(interviewer, researcher, static (object? data) => data is Success)
   .AddEdge(researcher, writer)
   .AddEdge(writer, editor)
-  .AddEdge(editor, writer, static (object? data) => data is Failure)
-  .AddEdge(editor, critic)
+  .AddEdge(editor, writer, static (object? data) => data is Feedback)
+  .AddEdge(editor, critic, static (object? data) => data is Success)
   .AddEdge(critic, writer, static (object? data) => data is Failure)
   .WithOutputFrom(critic)
   .BuildAsync<Question>();

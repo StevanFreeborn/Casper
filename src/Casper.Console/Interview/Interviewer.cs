@@ -24,19 +24,19 @@ internal sealed class Interviewer :
   )
   {
     var agtRes = await _agent.RunAsync(message.Text, _thread, cancellationToken: cancellationToken);
-    var intrRes = JsonSerializer.Deserialize<InterviewAgentResponse>(agtRes.Text);
+    var interviewerRes = JsonSerializer.Deserialize<InterviewAgentResponse>(agtRes.Text);
 
-    if (intrRes is null)
+    if (interviewerRes is null)
     {
       return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
-    if (intrRes.NeedMoreInfo)
+    if (interviewerRes.NeedMoreInfo)
     {
-      await context.SendMessageAsync(new Question(intrRes.Question), cancellationToken: cancellationToken);
-      return Result.Fail(intrRes.Question);
+      await context.SendMessageAsync(new Question(interviewerRes.Question), cancellationToken: cancellationToken);
+      return Result.Fail(interviewerRes.Question);
     }
 
-    return Result.Ok(intrRes.Topic);
+    return Result.Ok(interviewerRes.Topic);
   }
 }
