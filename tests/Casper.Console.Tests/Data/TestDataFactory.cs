@@ -1,3 +1,5 @@
+using Casper.Console.Write;
+
 namespace Casper.Console.Tests.Data;
 
 internal static class TestDataFactory
@@ -17,11 +19,15 @@ internal static class TestDataFactory
     "Challenge the reader to scaffold a new '.NET Minimal API' and build a simple endpoint in under 30 minutes."
   );
 
-  public static async Task<ResearchBrief> TestResearchBrief()
+  public static async Task<ResearchBrief> TestResearchBrief() => await GetTestObject<ResearchBrief>("researchBrief.json");
+
+  public static async Task<BlogPost> TestBlogPost() => await GetTestObject<BlogPost>("blogPost.json");
+
+  private static async Task<T> GetTestObject<T>(string fileName)
   {
-    var json = await GetTestFile("researchBrief.json");
-    return JsonSerializer.Deserialize<ResearchBrief>(json)
-      ?? throw new JsonException("Unable to parse test research brief from file");
+    var json = await GetTestFile(fileName);
+    return JsonSerializer.Deserialize<T>(json)
+      ?? throw new JsonException($"Unable to parse test {nameof(T)} from file");
   }
 
 

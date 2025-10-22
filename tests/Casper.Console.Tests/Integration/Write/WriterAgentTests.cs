@@ -21,8 +21,9 @@ public class WriterAgentTests : IntegrationTest
       researchBrief
     );
     var writerBriefMsg = writerBrief.ToString();
+
     var response = await _aut.RunAsync(writerBriefMsg, cancellationToken: TestContext.Current.CancellationToken);
+
     response.Should().NotBeNull();
   }
-
 }

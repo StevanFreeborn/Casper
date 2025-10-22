@@ -2,7 +2,7 @@ namespace Casper.Console.Edit;
 
 internal sealed class Editor :
   ReflectingExecutor<Editor>,
-  IMessageHandler<BlogPost, Result>
+  IMessageHandler<Success<BlogPost>, Result>
 {
   private readonly AIAgent _agent;
   private readonly AgentThread _thread;
@@ -18,12 +18,12 @@ internal sealed class Editor :
   }
 
   public async ValueTask<Result> HandleAsync(
-    BlogPost message,
+    Success<BlogPost> message,
     IWorkflowContext context,
     CancellationToken cancellationToken = default
   )
   {
-    var agtRes = await _agent.RunAsync(message.Content, _thread, cancellationToken: cancellationToken);
+    var agtRes = await _agent.RunAsync(message.Value.ToString(), _thread, cancellationToken: cancellationToken);
     var editorRes = JsonSerializer.Deserialize<EditorAgentResponse>(agtRes.Text);
 
     if (editorRes is null)
@@ -33,7 +33,7 @@ internal sealed class Editor :
 
     if (editorRes.HasFeedback)
     {
-      return Result.Fail(new Feedback(editorRes.Comments));
+      return Result.Fail(new Feedback(message.Value, editorRes.Comments));
     }
 
     return Result.Ok(message);

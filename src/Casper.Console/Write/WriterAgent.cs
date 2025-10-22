@@ -4,7 +4,7 @@ internal sealed partial class WriterAgent : AgentFacade
 {
   public WriterAgent(IChatClient client)
   {
-    var agentOptions = new ChatClientAgentOptions(Prompt.SystemInstructions)
+    var agentOptions = new ChatClientAgentOptions(Prompt.DraftSystemInstructions)
     {
       ChatOptions = new()
       {

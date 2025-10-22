@@ -2,14 +2,21 @@ namespace Casper.Console.Edit;
 
 internal sealed class Feedback : Exception
 {
-  public string[] Comments { get; init; } = [];
+  public BlogPost OriginalBlogPost { get; init; } = new BlogPost(
+    string.Empty,
+    string.Empty,
+    string.Empty,
+    string.Empty
+  );
+  public Comment[] Comments { get; init; } = [];
 
   public Feedback()
   {
   }
 
-  public Feedback(string[] comments)
+  public Feedback(BlogPost originalBlogPost, Comment[] comments)
   {
+    OriginalBlogPost = originalBlogPost;
     Comments = comments;
   }
 
