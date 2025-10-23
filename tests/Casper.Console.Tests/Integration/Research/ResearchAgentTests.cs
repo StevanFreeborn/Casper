@@ -1,5 +1,3 @@
-using Casper.Console.Tests.Data;
-
 [assembly: CaptureConsole]
 
 namespace Casper.Console.Tests.Integration.Research;

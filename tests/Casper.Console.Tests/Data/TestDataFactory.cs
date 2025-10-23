@@ -1,5 +1,3 @@
-using Casper.Console.Write;
-
 namespace Casper.Console.Tests.Data;
 
 internal static class TestDataFactory
@@ -19,9 +17,17 @@ internal static class TestDataFactory
     "Challenge the reader to scaffold a new '.NET Minimal API' and build a simple endpoint in under 30 minutes."
   );
 
-  public static async Task<ResearchBrief> TestResearchBrief() => await GetTestObject<ResearchBrief>("researchBrief.json");
+  internal static readonly Lazy<Task<ResearchBrief>> TestResearchBrief =
+    new(() => GetTestObject<ResearchBrief>("researchBrief.json"));
 
-  public static async Task<BlogPost> TestBlogPost() => await GetTestObject<BlogPost>("blogPost.json");
+  internal static readonly Lazy<Task<BlogPost>> TestBlogPost =
+    new(() => GetTestObject<BlogPost>("blogPost.json"));
+
+  internal static readonly Lazy<Task<BlogPost>> TestRevisedBlogPost =
+    new(() => GetTestObject<BlogPost>("revisedBlogPost.json"));
+
+  internal static readonly Lazy<Task<Comment[]>> TestComments =
+    new(() => GetTestObject<Comment[]>("comments.json"));
 
   private static async Task<T> GetTestObject<T>(string fileName)
   {

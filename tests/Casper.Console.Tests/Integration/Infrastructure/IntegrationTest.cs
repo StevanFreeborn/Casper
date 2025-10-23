@@ -1,4 +1,3 @@
-
 namespace Casper.Console.Tests.Integration.Infrastructure;
 
 public abstract class IntegrationTest : IClassFixture<TestConfiguration>

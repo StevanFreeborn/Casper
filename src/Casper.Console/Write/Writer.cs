@@ -25,7 +25,11 @@ internal sealed class Writer :
   )
   {
     var briefContext = message.Value.ToString();
-    var agtRes = await _agent.RunAsync(briefContext, _thread, cancellationToken: cancellationToken);
+    var runOptions = new WriterAgentRunOptions()
+    {
+      Mode = WriterAgentMode.Draft
+    };
+    var agtRes = await _agent.RunAsync(briefContext, _thread, runOptions, cancellationToken);
     var writerRes = JsonSerializer.Deserialize<WriterAgentResponse>(agtRes.Text);
 
     if (writerRes is null)
@@ -40,12 +44,25 @@ internal sealed class Writer :
   // correct system instruction...where
   // should we do that...I think in the
   // WriterAgent?
-  public ValueTask<Result> HandleAsync(
+  public async ValueTask<Result> HandleAsync(
     Feedback message,
     IWorkflowContext context,
     CancellationToken cancellationToken = default
   )
   {
-    throw new NotImplementedException();
+    var feedbackContext = message.ToString();
+    var runOptions = new WriterAgentRunOptions()
+    {
+      Mode = WriterAgentMode.Revision
+    };
+    var agtRes = await _agent.RunAsync(feedbackContext, _thread, runOptions, cancellationToken);
+    var writerRes = JsonSerializer.Deserialize<WriterAgentResponse>(agtRes.Text);
+    
+    if (writerRes is null)
+    {
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
+    }
+
+    return Result.Ok(writerRes.Post);
   }
 }

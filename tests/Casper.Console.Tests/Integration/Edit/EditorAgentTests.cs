@@ -1,6 +1,3 @@
-using Casper.Console.Edit;
-using Casper.Console.Tests.Data;
-
 namespace Casper.Console.Tests.Integration.Edit;
 
 public class EditorAgentTests : IntegrationTest
@@ -13,11 +10,21 @@ public class EditorAgentTests : IntegrationTest
   }
 
   [Fact]
-  public async Task RunAsync_WhenCalled_ItShouldReturnAResponse()
+  public async Task RunAsync_WhenCalledAndGivenUneditedBlogPost_ItShouldReturnAResponse()
   {
-    var blogPostMsg = await TestDataFactory.TestBlogPost();
+    var blogPostMsg = await TestDataFactory.TestBlogPost.Value;
 
     var response = await _aut.RunAsync(blogPostMsg.ToString(), cancellationToken: TestContext.Current.CancellationToken);
+
+    response.Should().NotBeNull();
+  }
+
+  [Fact]
+  public async Task RunAsync_WhenCalledAndGivenEditedBlogPost_ItShouldReturnAResponse()
+  {
+    var editedBlogPostMsg = await TestDataFactory.TestRevisedBlogPost.Value;
+
+    var response = await _aut.RunAsync(editedBlogPostMsg.ToString(), cancellationToken: TestContext.Current.CancellationToken);
 
     response.Should().NotBeNull();
   }
