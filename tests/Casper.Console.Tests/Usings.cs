@@ -4,6 +4,7 @@ global using System.Text.Json;
 
 global using AwesomeAssertions;
 
+global using Casper.Console.Critique;
 global using Casper.Console.Edit;
 global using Casper.Console.Interview;
 global using Casper.Console.Research;
