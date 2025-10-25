@@ -1,7 +1,26 @@
+using Bogus;
+
 namespace Casper.Console.Tests.Data;
 
 internal static class TestDataFactory
 {
+  public static Faker<TopicBrief> TopicBrief { get; } = new Faker<TopicBrief>()
+    .CustomInstantiator(f => new(
+      f.Lorem.Text(),
+      f.Lorem.Text(),
+      f.Lorem.Text(),
+      f.Lorem.Text(),
+      [.. f.Make(1, () => f.Lorem.Text())],
+      f.Lorem.Text(),
+      f.Lorem.Text()
+    ));
+
+  public static Faker<InterviewAgentResponse> InterviewAgentResponse { get; } = new Faker<InterviewAgentResponse>()
+    .CustomInstantiator(f => new InterviewAgentResponse(
+      f.PickRandom(true, false),
+      f.Lorem.Text(),
+      TopicBrief.Generate()
+    ));
 
   public static readonly TopicBrief TestTopicBrief = new(
     "Why Your TypeScript Skills Make C# Your Next Superpower",

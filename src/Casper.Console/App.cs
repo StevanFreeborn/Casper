@@ -19,8 +19,8 @@ internal sealed class App : IHostedService
     var workflow = await _factory.CreateAsync();
 
     await using var run = await InProcessExecution.StreamAsync(
-      workflow, 
-      new Question("What would you like to write about?"), 
+      workflow,
+      new Question("What would you like to write about?"),
       cancellationToken: cancellationToken
     );
 

@@ -23,8 +23,18 @@ internal sealed class Interviewer :
     CancellationToken cancellationToken
   )
   {
-    var agtRes = await _agent.RunAsync(message.Text, _thread, cancellationToken: cancellationToken);
-    var interviewerRes = JsonSerializer.Deserialize<InterviewAgentResponse>(agtRes.Text);
+    List<ChatMessage> messages = [message];
+    var agtRes = await _agent.RunAsync(messages, _thread, cancellationToken: cancellationToken);
+    InterviewAgentResponse? interviewerRes;
+
+    try
+    {
+      interviewerRes = JsonSerializer.Deserialize<InterviewAgentResponse>(agtRes.Text);
+    }
+    catch (Exception e) when (e is JsonException)
+    {
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
+    }
 
     if (interviewerRes is null)
     {
@@ -33,8 +43,9 @@ internal sealed class Interviewer :
 
     if (interviewerRes.NeedMoreInfo)
     {
-      await context.SendMessageAsync(new Question(interviewerRes.Question), cancellationToken: cancellationToken);
-      return Result.Fail(interviewerRes.Question);
+      var question = new Question(interviewerRes.Question);
+      await context.SendMessageAsync(question, cancellationToken: cancellationToken);
+      return Result.Fail(question);
     }
 
     return Result.Ok(interviewerRes.Topic);
