@@ -30,7 +30,16 @@ internal sealed class Writer :
       Mode = WriterAgentMode.Draft
     };
     var agtRes = await _agent.RunAsync(briefContext, _thread, runOptions, cancellationToken);
-    var writerRes = JsonSerializer.Deserialize<WriterAgentResponse>(agtRes.Text);
+    WriterAgentResponse? writerRes;
+
+    try
+    {
+      writerRes = JsonSerializer.Deserialize<WriterAgentResponse>(agtRes.Text);
+    }
+    catch (Exception e) when (e is JsonException)
+    {
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
+    }
 
     if (writerRes is null)
     {
@@ -57,7 +66,7 @@ internal sealed class Writer :
     };
     var agtRes = await _agent.RunAsync(feedbackContext, _thread, runOptions, cancellationToken);
     var writerRes = JsonSerializer.Deserialize<WriterAgentResponse>(agtRes.Text);
-    
+
     if (writerRes is null)
     {
       return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");

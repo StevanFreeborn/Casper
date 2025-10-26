@@ -53,6 +53,23 @@ internal static class TestDataFactory
   public static Faker<ResearchAgentResponse> ResearchAgentResponse {get;} = new Faker<ResearchAgentResponse>()
     .CustomInstantiator(f => new ResearchAgentResponse(ResearchBrief.Generate()));
 
+  public static Faker<WriterBrief> WriterBrief { get; } = new Faker<WriterBrief>()
+    .CustomInstantiator(f => new WriterBrief(
+      TopicBrief.Generate(),
+      ResearchBrief.Generate()
+    ));
+
+  public static Faker<BlogPost> BlogPost { get; } = new Faker<BlogPost>()
+    .CustomInstantiator(f => new BlogPost(
+      f.Lorem.Text(),
+      f.Lorem.Text(),
+      f.Lorem.Text(),
+      f.Lorem.Text()
+    ));
+
+  public static Faker<WriterAgentResponse> WriterAgentResponse { get; } = new Faker<WriterAgentResponse>()
+    .CustomInstantiator(f => new WriterAgentResponse(BlogPost.Generate()));
+
   public static readonly TopicBrief TestTopicBrief = new(
     "Why Your TypeScript Skills Make C# Your Next Superpower",
     "An overview of why C# is an approachable and powerful next step for experienced TypeScript developers.",
