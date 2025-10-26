@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Options;
-
 namespace Casper.Console.Tests.Unit.Write;
 
 public class WriterTests : ExecutorTest
@@ -61,6 +59,61 @@ public class WriterTests : ExecutorTest
     var researcherResult = new Success<WriterBrief>(writerBrief);
     
     var result = await _sut.HandleAsync(researcherResult, MockContext.Object, TestContext.Current.CancellationToken);
+
+    result.Should().BeOfType<Success<BlogPost>>();
+    
+    var success = result.As<Success<BlogPost>>();
+    success.Value.Should().BeEquivalentTo(blogPost);
+  }
+
+  [Theory]
+  [InlineData("null")]
+  [InlineData("")]
+  [InlineData("Invalid JSON")]
+  public async Task HandleAsync_WhenCalledWithFeedbackAndResponseCanNotBeDeserialized_ItShouldReturnFailure(string agentOutput)
+  {
+    MockAgent
+      .Setup(
+        static m => m.RunAsync(
+          It.IsAny<IEnumerable<ChatMessage>>(),
+          It.IsAny<AgentThread>(),
+          It.IsAny<AgentRunOptions>(),
+          It.IsAny<CancellationToken>()
+        )
+      )
+      .ReturnsAsync(new AgentRunResponse(new ChatMessage(ChatRole.Assistant, agentOutput)));
+
+    var feedback = TestDataFactory.Feedback.Generate();
+    
+    var result = await _sut.HandleAsync(feedback, MockContext.Object, TestContext.Current.CancellationToken);
+
+    result.Should().BeOfType<Failure>();
+  }
+
+  [Fact]
+  public async Task HandleAsync_WhenCalledWithFeedbackAndResponseCanBeDeserialized_ItShouldReturnABlogPost()
+  {
+    var blogPost = TestDataFactory.BlogPost.Generate();
+    var writerAgentResponse = TestDataFactory
+      .WriterAgentResponse
+      .Generate() with { Post = blogPost };
+
+    var writerAgentResponseJson = JsonSerializer.Serialize(writerAgentResponse);
+
+    MockAgent
+      .Setup(
+        static m => m.RunAsync(
+          It.IsAny<IEnumerable<ChatMessage>>(),
+          It.IsAny<AgentThread>(),
+          It.IsAny<AgentRunOptions>(),
+          It.IsAny<CancellationToken>()
+        )
+      )
+      .ReturnsAsync(new AgentRunResponse(new ChatMessage(ChatRole.Assistant, writerAgentResponseJson)));
+
+    var feedback = TestDataFactory.Feedback.Generate();
+    
+    var result = await _sut.HandleAsync(feedback, MockContext.Object, TestContext.Current.CancellationToken);
 
     result.Should().BeOfType<Success<BlogPost>>();
     

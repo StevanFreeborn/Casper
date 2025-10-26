@@ -49,10 +49,6 @@ internal sealed class Writer :
     return Result.Ok(writerRes.Post);
   }
 
-  // TODO: Need to handle feedback using
-  // correct system instruction...where
-  // should we do that...I think in the
-  // WriterAgent?
   public async ValueTask<Result> HandleAsync(
     Feedback message,
     IWorkflowContext context,
@@ -65,7 +61,16 @@ internal sealed class Writer :
       Mode = WriterAgentMode.Revision
     };
     var agtRes = await _agent.RunAsync(feedbackContext, _thread, runOptions, cancellationToken);
-    var writerRes = JsonSerializer.Deserialize<WriterAgentResponse>(agtRes.Text);
+    WriterAgentResponse? writerRes;
+
+    try
+    {
+      writerRes = JsonSerializer.Deserialize<WriterAgentResponse>(agtRes.Text);
+    }
+    catch (Exception e) when (e is JsonException)
+    {
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
+    }
 
     if (writerRes is null)
     {
