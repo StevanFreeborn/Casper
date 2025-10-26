@@ -50,7 +50,7 @@ internal static class TestDataFactory
       [AdditionalResource.Generate()]
     ));
 
-  public static Faker<ResearchAgentResponse> ResearchAgentResponse {get;} = new Faker<ResearchAgentResponse>()
+  public static Faker<ResearchAgentResponse> ResearchAgentResponse { get; } = new Faker<ResearchAgentResponse>()
     .CustomInstantiator(f => new ResearchAgentResponse(ResearchBrief.Generate()));
 
   public static Faker<WriterBrief> WriterBrief { get; } = new Faker<WriterBrief>()
@@ -72,6 +72,19 @@ internal static class TestDataFactory
 
   public static Faker<Feedback> Feedback { get; } = new Faker<Feedback>()
     .CustomInstantiator(f => new Feedback());
+
+  public static Faker<Comment> Comment { get; } = new Faker<Comment>()
+    .CustomInstantiator(f => new Comment(
+      f.Lorem.Text(),
+      f.Lorem.Text(),
+      f.Lorem.Text()
+    ));
+
+  public static Faker<EditorAgentResponse> EditorAgentResponse { get; } = new Faker<EditorAgentResponse>()
+    .CustomInstantiator(f => new EditorAgentResponse(
+      f.PickRandom(true, false),
+      [Comment.Generate()]
+    ));
 
   public static readonly TopicBrief TestTopicBrief = new(
     "Why Your TypeScript Skills Make C# Your Next Superpower",

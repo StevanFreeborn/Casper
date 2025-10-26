@@ -24,7 +24,16 @@ internal sealed class Editor :
   )
   {
     var agtRes = await _agent.RunAsync(message.Value.ToString(), _thread, cancellationToken: cancellationToken);
-    var editorRes = JsonSerializer.Deserialize<EditorAgentResponse>(agtRes.Text);
+    EditorAgentResponse? editorRes;
+
+    try
+    {
+      editorRes = JsonSerializer.Deserialize<EditorAgentResponse>(agtRes.Text);
+    }
+    catch (Exception e) when (e is JsonException)
+    {
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
+    }
 
     if (editorRes is null)
     {
@@ -38,4 +47,9 @@ internal sealed class Editor :
 
     return Result.Ok(message);
   }
+}
+
+static class MyEnum
+{
+  public const string Hello = "Hello";
 }
