@@ -22,6 +22,37 @@ internal static class TestDataFactory
       TopicBrief.Generate()
     ));
 
+  public static Faker<Citation> Citation { get; } = new Faker<Citation>()
+    .CustomInstantiator(f => new Citation(
+      f.Lorem.Word(),
+      f.Lorem.Word()
+    ));
+
+  public static Faker<ResearchPoint> ResearchPoint { get; } = new Faker<ResearchPoint>()
+    .CustomInstantiator(f => new ResearchPoint(
+      f.Lorem.Word(),
+      [Citation.Generate()],
+      [Citation.Generate()],
+      [Citation.Generate()]
+    ));
+
+  public static Faker<AdditionalResource> AdditionalResource { get; } = new Faker<AdditionalResource>()
+    .CustomInstantiator(f => new AdditionalResource(
+      f.Lorem.Word(),
+      f.Lorem.Word()
+    ));
+
+  public static Faker<ResearchBrief> ResearchBrief { get; } = new Faker<ResearchBrief>()
+    .CustomInstantiator(f => new ResearchBrief(
+      f.Lorem.Word(),
+      f.Lorem.Word(),
+      [ResearchPoint.Generate()],
+      [AdditionalResource.Generate()]
+    ));
+
+  public static Faker<ResearchAgentResponse> ResearchAgentResponse {get;} = new Faker<ResearchAgentResponse>()
+    .CustomInstantiator(f => new ResearchAgentResponse(ResearchBrief.Generate()));
+
   public static readonly TopicBrief TestTopicBrief = new(
     "Why Your TypeScript Skills Make C# Your Next Superpower",
     "An overview of why C# is an approachable and powerful next step for experienced TypeScript developers.",

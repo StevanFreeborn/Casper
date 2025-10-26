@@ -24,6 +24,7 @@ internal sealed class Interviewer :
   )
   {
     List<ChatMessage> messages = [message];
+    
     var agtRes = await _agent.RunAsync(messages, _thread, cancellationToken: cancellationToken);
     InterviewAgentResponse? interviewerRes;
 

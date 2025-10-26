@@ -23,8 +23,19 @@ internal sealed class Researcher :
     CancellationToken cancellationToken
   )
   {
-    var agtRes = await _agent.RunAsync(message.Value.ToString(), _thread, cancellationToken: cancellationToken);
-    var researcherRes = JsonSerializer.Deserialize<ResearchAgentResponse>(agtRes.Text);
+    List<ChatMessage> messages = [new ChatMessage(ChatRole.User, message.Value.ToString())];
+
+    var agtRes = await _agent.RunAsync(messages, _thread, cancellationToken: cancellationToken);
+    ResearchAgentResponse? researcherRes;
+
+    try
+    {
+      researcherRes = JsonSerializer.Deserialize<ResearchAgentResponse>(agtRes.Text);
+    }
+    catch (Exception e) when (e is JsonException)
+    {
+      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
+    }
 
     if (researcherRes is null)
     {

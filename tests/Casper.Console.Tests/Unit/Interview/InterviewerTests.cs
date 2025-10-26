@@ -66,7 +66,7 @@ public class InterviewerTests : ExecutorTest
   }
 
   [Fact]
-  public async Task HandleAsync_WhenCalledAndInterviewerIsSatisifed_ItShouldReturnTopicBrief()
+  public async Task HandleAsync_WhenCalledAndInterviewerIsSatisfied_ItShouldReturnTopicBrief()
   {
     var topicBrief = TestDataFactory.TopicBrief.Generate();
 
