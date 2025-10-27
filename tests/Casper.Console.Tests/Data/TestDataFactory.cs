@@ -86,6 +86,12 @@ internal static class TestDataFactory
       [Comment.Generate()]
     ));
 
+  public static Faker<CriticAgentResponse> CriticAgentResponse { get; } = new Faker<CriticAgentResponse>()
+    .CustomInstantiator(f => new CriticAgentResponse(
+      f.PickRandom(true, false),
+      [Comment.Generate()]
+    ));
+
   public static readonly TopicBrief TestTopicBrief = new(
     "Why Your TypeScript Skills Make C# Your Next Superpower",
     "An overview of why C# is an approachable and powerful next step for experienced TypeScript developers.",

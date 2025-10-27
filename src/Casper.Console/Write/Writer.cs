@@ -30,7 +30,7 @@ internal sealed class Writer :
       Mode = WriterAgentMode.Draft
     };
     var agtRes = await _agent.RunAsync(briefContext, _thread, runOptions, cancellationToken);
-    WriterAgentResponse? writerRes;
+    WriterAgentResponse? writerRes = null;
 
     try
     {
@@ -38,7 +38,6 @@ internal sealed class Writer :
     }
     catch (Exception e) when (e is JsonException)
     {
-      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
     if (writerRes is null)

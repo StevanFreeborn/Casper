@@ -26,7 +26,7 @@ internal sealed class Interviewer :
     List<ChatMessage> messages = [message];
     
     var agtRes = await _agent.RunAsync(messages, _thread, cancellationToken: cancellationToken);
-    InterviewAgentResponse? interviewerRes;
+    InterviewAgentResponse? interviewerRes = null;
 
     try
     {
@@ -34,7 +34,6 @@ internal sealed class Interviewer :
     }
     catch (Exception e) when (e is JsonException)
     {
-      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
     if (interviewerRes is null)

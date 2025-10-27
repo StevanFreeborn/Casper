@@ -24,7 +24,7 @@ internal sealed class Editor :
   )
   {
     var agtRes = await _agent.RunAsync(message.Value.ToString(), _thread, cancellationToken: cancellationToken);
-    EditorAgentResponse? editorRes;
+    EditorAgentResponse? editorRes = null;
 
     try
     {
@@ -32,7 +32,6 @@ internal sealed class Editor :
     }
     catch (Exception e) when (e is JsonException)
     {
-      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
     if (editorRes is null)

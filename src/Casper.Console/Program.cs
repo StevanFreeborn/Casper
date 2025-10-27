@@ -6,6 +6,7 @@ var host = Host.CreateDefaultBuilder(args)
   .ConfigureAppConfiguration(static c => c.SetBasePath(AppContext.BaseDirectory))
   .ConfigureServices(static (ctx, srvcs) =>
   {
+    srvcs.AddSingleton<IFileSystem>(new FileSystem());
     srvcs.Configure<GeminiClientOptions>(ctx.Configuration.GetSection(nameof(GeminiClientOptions)));
     srvcs.AddGeminiClient();
     srvcs.AddChatClient();

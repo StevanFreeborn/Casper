@@ -26,7 +26,7 @@ internal sealed class Researcher :
     List<ChatMessage> messages = [new ChatMessage(ChatRole.User, message.Value.ToString())];
 
     var agtRes = await _agent.RunAsync(messages, _thread, cancellationToken: cancellationToken);
-    ResearchAgentResponse? researcherRes;
+    ResearchAgentResponse? researcherRes = null;
 
     try
     {
@@ -34,7 +34,6 @@ internal sealed class Researcher :
     }
     catch (Exception e) when (e is JsonException)
     {
-      return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
     if (researcherRes is null)
