@@ -7,13 +7,20 @@ This is my attempt at creating a small application that acts as my own personal 
 ## Workflow
 
 ```mermaid
-graph TD
-  UserInput([User Input: Blog Topic]) --> Researcher[Researcher Agent]
-  Researcher --> Writer[Writer Agent]
-  Writer --> Editor[Editor Agent]
-  Editor --> Critic[Critic Agent]
+flowchart TD
+  user["user (Start)"];
+  Interviewer["Interviewer"];
+  Researcher["Researcher"];
+  Writer["Writer"];
+  Editor["Editor"];
+  Critic["Critic"];
 
-  %% Critic feedback loop
-  Critic -- "If REVISE needed" --> Writer
-  Critic -- "If APPROVED" --> UserOutput([Final Output: Approved Blog Post])
+  user --> Interviewer;
+  Interviewer -. Needs more info .-> user;
+  Interviewer -. Has enough info .-> Researcher;
+  Researcher --> Writer;
+  Writer --> Editor;
+  Editor -. Has feedback .-> Writer;
+  Editor -. Has no feedback .-> Critic;
+  Critic -. Has feedback .-> Writer;
 ```
