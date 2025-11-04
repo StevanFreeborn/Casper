@@ -44,7 +44,7 @@ internal sealed class Editor :
       return Result.Fail(new Feedback(message.Value, editorRes.Comments));
     }
 
-    return Result.Ok(message);
+    return Result.Ok(message.Value);
   }
 }
 

@@ -28,7 +28,7 @@ internal sealed class Critic :
     CancellationToken cancellationToken = default
   )
   {
-    var blogPostMessage = message.Value.ToMarkdown();
+    var blogPostMessage = message.Value.ToString();
     var agtRes = await _agent.RunAsync(blogPostMessage, _thread, cancellationToken: cancellationToken);
     CriticAgentResponse? criticRes = null;
 

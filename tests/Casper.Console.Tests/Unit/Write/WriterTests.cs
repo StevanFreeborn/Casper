@@ -84,8 +84,9 @@ public class WriterTests : ExecutorTest
       .ReturnsAsync(new AgentRunResponse(new ChatMessage(ChatRole.Assistant, agentOutput)));
 
     var feedback = TestDataFactory.Feedback.Generate();
+    var feedbackResult = new Failure<Feedback>(feedback);
     
-    var result = await _sut.HandleAsync(feedback, MockContext.Object, TestContext.Current.CancellationToken);
+    var result = await _sut.HandleAsync(feedbackResult, MockContext.Object, TestContext.Current.CancellationToken);
 
     result.Should().BeOfType<Failure>();
   }
@@ -112,8 +113,9 @@ public class WriterTests : ExecutorTest
       .ReturnsAsync(new AgentRunResponse(new ChatMessage(ChatRole.Assistant, writerAgentResponseJson)));
 
     var feedback = TestDataFactory.Feedback.Generate();
-    
-    var result = await _sut.HandleAsync(feedback, MockContext.Object, TestContext.Current.CancellationToken);
+    var feedbackResult = new Failure<Feedback>(feedback);
+
+    var result = await _sut.HandleAsync(feedbackResult, MockContext.Object, TestContext.Current.CancellationToken);
 
     result.Should().BeOfType<Success<BlogPost>>();
     

@@ -43,9 +43,7 @@ internal sealed class Interviewer :
 
     if (interviewerRes.NeedMoreInfo)
     {
-      var question = new Question(interviewerRes.Question);
-      await context.SendMessageAsync(question, cancellationToken: cancellationToken);
-      return Result.Fail(question);
+      return Result.Fail(new Question(interviewerRes.Question));
     }
 
     return Result.Ok(interviewerRes.Topic);

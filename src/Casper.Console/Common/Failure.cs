@@ -16,3 +16,13 @@ internal class Failure : Result
     Exception = new Exception(message);
   }
 }
+
+internal class Failure<T> : Failure where T : Exception
+{
+  public new T Exception { get; }
+
+  public Failure(T exception) : base(exception)
+  {
+    Exception = exception;
+  }
+}

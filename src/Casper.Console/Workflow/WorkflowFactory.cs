@@ -37,13 +37,13 @@ internal sealed class WorkflowFactory : IWorkflowFactory
 
     return new WorkflowBuilder(user)
       .AddEdge(user, _interviewer)
-      .AddEdge(_interviewer, user, static (object? data) => data is Question)
+      .AddEdge(_interviewer, user, static (object? data) => data is Failure<Question>)
       .AddEdge(_interviewer, _researcher, static (object? data) => data is Success)
       .AddEdge(_researcher, _writer)
       .AddEdge(_writer, _editor)
-      .AddEdge(_editor, _writer, static (object? data) => data is Feedback)
+      .AddEdge(_editor, _writer, static (object? data) => data is Failure<Feedback>)
       .AddEdge(_editor, _critic, static (object? data) => data is Success)
-      .AddEdge(_critic, _writer, static (object? data) => data is Feedback)
+      .AddEdge(_critic, _writer, static (object? data) => data is Failure<Feedback>)
       .WithOutputFrom(_critic)
       .BuildAsync<Question>();
   }

@@ -3,7 +3,7 @@ namespace Casper.Console.Write;
 internal sealed class Writer :
   ReflectingExecutor<Writer>,
   IMessageHandler<Success<WriterBrief>, Result>,
-  IMessageHandler<Feedback, Result>
+  IMessageHandler<Failure<Feedback>, Result>
 {
   private readonly AIAgent _agent;
   private readonly AgentThread _thread;
@@ -49,12 +49,12 @@ internal sealed class Writer :
   }
 
   public async ValueTask<Result> HandleAsync(
-    Feedback message,
+    Failure<Feedback> message,
     IWorkflowContext context,
     CancellationToken cancellationToken = default
   )
   {
-    var feedbackContext = message.ToString();
+    var feedbackContext = message.Exception.ToString();
     var runOptions = new WriterAgentRunOptions()
     {
       Mode = WriterAgentMode.Revision
