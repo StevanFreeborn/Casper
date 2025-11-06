@@ -1,11 +1,10 @@
-using System.IO.Abstractions;
-
-using Casper.Console.Workflow;
-
 namespace Casper.Console.Tests.Integration.Workflow;
 
 public class WorkflowFactoryTests
 {
+  private const string TestTopic = "TypeScript";
+  private readonly Mock<IFile> _mockFile = new();
+  private readonly Mock<IPath> _mockPath = new();
   private readonly Mock<IFileSystem> _mockFileSystem = new();
   private readonly Mock<AIAgent> _mockInterviewerAgent = new();
   private readonly Mock<AIAgent> _mockResearcherAgent = new();
@@ -16,6 +15,9 @@ public class WorkflowFactoryTests
 
   public WorkflowFactoryTests()
   {
+    _mockFileSystem.SetupGet(fs => fs.File).Returns(_mockFile.Object);
+    _mockFileSystem.SetupGet(fs => fs.Path).Returns(_mockPath.Object);
+
     _sut = new(
       new(_mockInterviewerAgent.Object),
       new(_mockResearcherAgent.Object),
@@ -24,6 +26,7 @@ public class WorkflowFactoryTests
       new(_mockCriticAgent.Object, _mockFileSystem.Object)
     );
   }
+
 
   [Fact]
   public async Task CreateAsync_WhenCalled_ItShouldReturnAWorkflow()
@@ -64,22 +67,17 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.PendingRequests);
     run.NewEvents.Should().Contain(e => e is RequestInfoEvent);
 
-
     VerifyAgentRunCalled(
       _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
+      msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)),
       Times.Once()
     );
   }
@@ -92,10 +90,8 @@ public class WorkflowFactoryTests
     var workflow = await _sut.CreateAsync();
 
     await using var run = await RunWorkflowAsync(workflow);
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
 
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
@@ -104,7 +100,7 @@ public class WorkflowFactoryTests
 
     VerifyAgentRunCalled(
       _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
+      msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)),
       Times.Once()
     );
   }
@@ -112,61 +108,39 @@ public class WorkflowFactoryTests
   [Fact]
   public async Task Workflow_WhenInterviewerHasEnoughInfo_ItShouldPassTopicBriefToResearcher()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = false
-    };
-
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
     var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
 
-    MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
-    MockAgentRunResponse(_mockResearcherAgent, researcherAgentResponse);
-    MockAgentRunResponse(_mockWriterAgent, string.Empty);
+    SetupWorkflowMocks(
+      interviewResponse: interviewerAgentResponse,
+      researchResponse: researcherAgentResponse
+    );
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.Idle);
     run.NewEvents.Should().NotContain(e => e is RequestInfoEvent);
 
-    VerifyAgentRunCalled(
-      _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockResearcherAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(m => m.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(m => m.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
     );
   }
 
   [Fact]
   public async Task Workflow_WhenInterviewerDoesNotHaveEnoughInfo_ItShouldAskUserFollowUpQuestion()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = true
-    };
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = true };
 
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
@@ -175,7 +149,7 @@ public class WorkflowFactoryTests
 
     VerifyAgentRunCalled(
       _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
+      msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)),
       Times.Once()
     );
   }
@@ -183,56 +157,32 @@ public class WorkflowFactoryTests
   [Fact]
   public async Task Workflow_WhenResearcherFails_ItShouldEndWorkflow()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = false
-    };
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
 
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
     MockAgentRunResponse(_mockResearcherAgent, string.Empty);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.Idle);
-
     run.NewEvents.Should().NotContain(e => e is RequestInfoEvent);
 
-    VerifyAgentRunCalled(
-      _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
     );
 
-    VerifyAgentRunCalled(
-      _mockResearcherAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockWriterAgent,
-      msgs => true,
-      Times.Never()
-    );
+    VerifyAgentNotCalled(_mockWriterAgent);
   }
 
   [Fact]
   public async Task Workflow_WhenResearcherSucceeds_ItShouldPassResultsToWriter()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = false
-    };
-
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
     var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
 
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
@@ -240,45 +190,24 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockWriterAgent, string.Empty);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.Idle);
 
-    VerifyAgentRunCalled(
-      _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockResearcherAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockWriterAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
     );
   }
 
   [Fact]
   public async Task Workflow_WhenTheWriterSucceeds_ItShouldPassBlogPostToEditor()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = false
-    };
-
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
     var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
     var writerAgentResponse = TestDataFactory.WriterAgentResponse.Generate();
 
@@ -288,51 +217,25 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockEditorAgent, string.Empty);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.Idle);
 
-    VerifyAgentRunCalled(
-      _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockResearcherAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockWriterAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockEditorAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockEditorAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
     );
   }
 
   [Fact]
   public async Task Workflow_WhenTheWriterFails_ItShouldEndWorkflow()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = false
-    };
-
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
     var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
 
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
@@ -340,51 +243,26 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockWriterAgent, string.Empty);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.Idle);
 
-    VerifyAgentRunCalled(
-      _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
     );
 
-    VerifyAgentRunCalled(
-      _mockResearcherAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockWriterAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockEditorAgent,
-      msgs => true,
-      Times.Never()
-    );
+    VerifyAgentNotCalled(_mockEditorAgent);
   }
 
   [Fact]
   public async Task Workflow_WhenTheEditorFails_ItShouldEndWorkflow()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = false
-    };
-
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
     var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
     var writerAgentResponse = TestDataFactory.WriterAgentResponse.Generate();
 
@@ -394,57 +272,28 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockEditorAgent, string.Empty);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.Idle);
 
-    VerifyAgentRunCalled(
-      _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockResearcherAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockWriterAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockEditorAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockEditorAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
     );
   }
 
   [Fact]
   public async Task Workflow_WhenTheEditorHasFeedback_ItShouldPassFeedbackBackToTheWriter()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = false
-    };
-
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
     var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
     var writerAgentResponse = TestDataFactory.WriterAgentResponse.Generate();
-    var editorAgentResponse = TestDataFactory.EditorAgentResponse.Generate() with
-    {
-      HasFeedback = true
-    };
+    var editorAgentResponse = TestDataFactory.EditorAgentResponse.Generate() with { HasFeedback = true };
 
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
     MockAgentRunResponse(_mockResearcherAgent, researcherAgentResponse);
@@ -452,45 +301,21 @@ public class WorkflowFactoryTests
     MockAgentRunResponses(_mockEditorAgent, editorAgentResponse, string.Empty);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.Idle);
 
-    VerifyAgentRunCalled(
-      _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockEditorAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Exactly(2))
     );
 
-    VerifyAgentRunCalled(
-      _mockResearcherAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockWriterAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockEditorAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Exactly(2)
-    );
-
-    var feedback = new Feedback(
-      writerAgentResponse.Post,
-      editorAgentResponse.Comments
-    );
+    var feedback = new Feedback(writerAgentResponse.Post, editorAgentResponse.Comments);
 
     VerifyAgentRunCalled(
       _mockWriterAgent,
@@ -502,16 +327,10 @@ public class WorkflowFactoryTests
   [Fact]
   public async Task Workflow_WhenTheEditorDoesNotHaveFeedback_ItShouldPassBlogPostToCritic()
   {
-    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with
-    {
-      NeedMoreInfo = false
-    };
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
     var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
     var writerAgentResponse = TestDataFactory.WriterAgentResponse.Generate();
-    var editorAgentResponse = TestDataFactory.EditorAgentResponse.Generate() with
-    {
-      HasFeedback = false
-    };
+    var editorAgentResponse = TestDataFactory.EditorAgentResponse.Generate() with { HasFeedback = false };
 
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
     MockAgentRunResponse(_mockResearcherAgent, researcherAgentResponse);
@@ -520,65 +339,186 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockCriticAgent, string.Empty);
 
     var workflow = await _sut.CreateAsync();
-
     await using var run = await RunWorkflowAsync(workflow);
-
-    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
-    var res = re.Request.CreateResponse<ChatMessage>(new(ChatRole.User, "TypeScript"));
-    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
     var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
 
     status.Should().Be(RunStatus.Idle);
 
-    VerifyAgentRunCalled(
-      _mockInterviewerAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains("TypeScript", StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockResearcherAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockWriterAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockEditorAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
-    );
-
-    VerifyAgentRunCalled(
-      _mockCriticAgent,
-      msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)),
-      Times.Once()
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockEditorAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockCriticAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
     );
   }
 
   [Fact]
   public async Task Workflow_WhenTheCriticFails_ItShouldEndWorkflow()
   {
-    throw new NotImplementedException();
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
+    var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
+    var writerAgentResponse = TestDataFactory.WriterAgentResponse.Generate();
+    var editorAgentResponse = TestDataFactory.EditorAgentResponse.Generate() with { HasFeedback = false };
+
+    MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
+    MockAgentRunResponse(_mockResearcherAgent, researcherAgentResponse);
+    MockAgentRunResponse(_mockWriterAgent, writerAgentResponse);
+    MockAgentRunResponse(_mockEditorAgent, editorAgentResponse);
+    MockAgentRunResponse(_mockCriticAgent, string.Empty);
+
+    var workflow = await _sut.CreateAsync();
+    await using var run = await RunWorkflowAsync(workflow);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
+
+    var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
+
+    status.Should().Be(RunStatus.Idle);
+
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockEditorAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockCriticAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
+    );
   }
 
   [Fact]
   public async Task Workflow_WhenTheCriticProvidesFeedback_ItShouldPassFeedbackBackToTheWriter()
   {
-    throw new NotImplementedException();
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
+    var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
+    var writerAgentResponse = TestDataFactory.WriterAgentResponse.Generate();
+    var editorAgentResponse = TestDataFactory.EditorAgentResponse.Generate() with { HasFeedback = false };
+    var criticAgentResponse = TestDataFactory.CriticAgentResponse.Generate() with { HasFeedback = true };
+
+    MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
+    MockAgentRunResponse(_mockResearcherAgent, researcherAgentResponse);
+    MockAgentRunResponses(_mockWriterAgent, writerAgentResponse, string.Empty);
+    MockAgentRunResponse(_mockEditorAgent, editorAgentResponse);
+    MockAgentRunResponse(_mockCriticAgent, criticAgentResponse);
+
+    var workflow = await _sut.CreateAsync();
+    await using var run = await RunWorkflowAsync(workflow);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
+
+    var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
+
+    status.Should().Be(RunStatus.Idle);
+
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockEditorAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockCriticAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
+    );
+
+    var feedback = new Feedback(writerAgentResponse.Post, criticAgentResponse.Comments);
+
+    VerifyAgentRunCalled(
+      _mockWriterAgent,
+      msgs => msgs.Any(msg => msg.Text.Contains(feedback.ToString(), StringComparison.OrdinalIgnoreCase)),
+      Times.Once()
+    );
   }
 
   [Fact]
   public async Task Workflow_WhenTheCriticHasNoFeedback_ItShouldCompleteTheWorkflow()
   {
-    throw new NotImplementedException();
+    var interviewerAgentResponse = TestDataFactory.InterviewAgentResponse.Generate() with { NeedMoreInfo = false };
+    var researcherAgentResponse = TestDataFactory.ResearchAgentResponse.Generate();
+    var writerAgentResponse = TestDataFactory.WriterAgentResponse.Generate();
+    var editorAgentResponse = TestDataFactory.EditorAgentResponse.Generate() with { HasFeedback = false };
+    var criticAgentResponse = TestDataFactory.CriticAgentResponse.Generate() with { HasFeedback = false };
+
+    MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
+    MockAgentRunResponse(_mockResearcherAgent, researcherAgentResponse);
+    MockAgentRunResponse(_mockWriterAgent, writerAgentResponse);
+    MockAgentRunResponse(_mockEditorAgent, editorAgentResponse);
+    MockAgentRunResponse(_mockCriticAgent, criticAgentResponse);
+
+    _mockPath.Setup(p => p.Combine(It.IsAny<string>(), It.IsAny<string>())).Returns(string.Empty);
+
+    var workflow = await _sut.CreateAsync();
+    await using var run = await RunWorkflowAsync(workflow);
+    await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
+
+    var status = await run.GetStatusAsync(TestContext.Current.CancellationToken);
+
+    status.Should().Be(RunStatus.Idle);
+    run.OutgoingEvents.Should().Contain(e => e is WorkflowOutputEvent);
+
+    VerifyAgentChainCalled(
+      (_mockInterviewerAgent, msgs => msgs.Any(msg => msg.Text.Contains(TestTopic, StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockResearcherAgent, msgs => msgs.Any(msg => msg.Text.Contains(interviewerAgentResponse.Topic.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockWriterAgent, msgs => msgs.Any(msg => msg.Text.Contains(researcherAgentResponse.Brief.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockEditorAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once()),
+      (_mockCriticAgent, msgs => msgs.Any(msg => msg.Text.Contains(writerAgentResponse.Post.ToString(), StringComparison.OrdinalIgnoreCase)), Times.Once())
+    );
+
+    _mockFile.Verify(
+      f => f.WriteAllTextAsync(
+        It.IsAny<string>(),
+        It.IsAny<string>(),
+        It.IsAny<CancellationToken>()
+      ),
+      Times.Once()
+    );
   }
+
+  private void SetupWorkflowMocks(
+    InterviewAgentResponse? interviewResponse = null,
+    ResearchAgentResponse? researchResponse = null,
+    WriterAgentResponse? writerResponse = null,
+    EditorAgentResponse? editorResponse = null,
+    CriticAgentResponse? criticResponse = null)
+  {
+    if (interviewResponse is not null)
+    {
+      MockAgentRunResponse(_mockInterviewerAgent, interviewResponse);
+    }
+
+    if (researchResponse is not null)
+    {
+      MockAgentRunResponse(_mockResearcherAgent, researchResponse);
+    }
+
+    if (writerResponse is not null)
+    {
+      MockAgentRunResponse(_mockWriterAgent, writerResponse);
+    }
+
+    if (editorResponse is not null)
+    {
+      MockAgentRunResponse(_mockEditorAgent, editorResponse);
+    }
+
+    if (criticResponse is not null)
+    {
+      MockAgentRunResponse(_mockCriticAgent, criticResponse);
+    }
+  }
+
+  private static void VerifyAgentChainCalled(
+    params (
+      Mock<AIAgent> agent, 
+      Func<IEnumerable<ChatMessage>, bool> predicate, 
+      Times times
+    )[] chain
+  )
+  {
+    foreach (var (agent, predicate, times) in chain)
+    {
+      VerifyAgentRunCalled(agent, predicate, times);
+    }
+  }
+
+  private static void VerifyAgentNotCalled(Mock<AIAgent> agent) => 
+    VerifyAgentRunCalled(agent, _ => true, Times.Never());
 
   private static void VerifyAgentRunCalled(
     Mock<AIAgent> mockAgent,
@@ -646,11 +586,22 @@ public class WorkflowFactoryTests
     return new AgentRunResponse(chatMessageResponse);
   }
 
-  private static ValueTask<Run> RunWorkflowAsync(Workflow<Question> workflow)
+  private static async Task ResumeWorkflowAsync(
+    Run run,
+    ChatMessage userMessage
+  )
+  {
+    var re = run.NewEvents.First(e => e is RequestInfoEvent re).As<RequestInfoEvent>();
+    var res = re.Request.CreateResponse<ChatMessage>(userMessage);
+
+    await run.ResumeAsync([res], TestContext.Current.CancellationToken);
+  }
+
+  private static ValueTask<Run> RunWorkflowAsync(Workflow<Failure<Question>> workflow)
   {
     return InProcessExecution.RunAsync(
       workflow,
-      new Question("What would you like to write about?"),
+      Result.Fail(new Question("What would you like to write about?")),
       cancellationToken: TestContext.Current.CancellationToken
     );
   }

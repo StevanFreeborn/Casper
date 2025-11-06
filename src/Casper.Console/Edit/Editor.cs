@@ -47,8 +47,3 @@ internal sealed class Editor :
     return Result.Ok(message.Value);
   }
 }
-
-static class MyEnum
-{
-  public const string Hello = "Hello";
-}

@@ -2,7 +2,7 @@ using Casper.Console.Workflow;
 
 namespace Casper.Console;
 
-internal sealed class App : IHostedService
+internal sealed class App : IHostedLifecycleService
 {
   private readonly IWorkflowFactory _factory;
 
@@ -11,19 +11,20 @@ internal sealed class App : IHostedService
     _factory = factory;
   }
 
-  public async Task StartAsync(CancellationToken cancellationToken)
+  public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+  public Task StartingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+  public async Task StartedAsync(CancellationToken cancellationToken)
   {
     var workflow = await _factory.CreateAsync();
 
     await using var run = await InProcessExecution.StreamAsync(
       workflow,
-      new Question("What would you like to write about?"),
+      Result.Fail(new Question("What would you like to write about?")),
       cancellationToken: cancellationToken
     );
 
-    // TODO: Currently the while loop in this blocks the host
-    // when running started async...is that good? bad? need
-    // to figure out.
     await foreach (var evt in run.WatchStreamAsync(cancellationToken))
     {
       switch (evt)
@@ -42,11 +43,11 @@ internal sealed class App : IHostedService
 
     static ExternalResponse AskUserQuestion(ExternalRequest request, CancellationToken ct)
     {
-      if (request.DataIs<Question>(out var question))
+      if (request.DataIs<Failure<Question>>(out var failure))
       {
         string? answer = null;
 
-        System.Console.WriteLine($"Casper: {question.Message}");
+        System.Console.WriteLine($"Casper: {failure.Exception.Message}");
 
         while (ct.IsCancellationRequested is false && string.IsNullOrWhiteSpace(answer))
         {
@@ -62,4 +63,6 @@ internal sealed class App : IHostedService
   }
 
   public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+  public Task StoppingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+  public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

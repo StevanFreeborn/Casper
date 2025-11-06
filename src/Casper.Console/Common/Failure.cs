@@ -17,7 +17,7 @@ internal class Failure : Result
   }
 }
 
-internal class Failure<T> : Failure where T : Exception
+internal sealed class Failure<T> : Failure where T : Exception
 {
   public new T Exception { get; }
 

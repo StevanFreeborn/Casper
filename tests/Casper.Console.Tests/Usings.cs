@@ -1,4 +1,5 @@
 global using System.Globalization;
+global using System.IO.Abstractions;
 global using System.Text;
 global using System.Text.Json;
 
@@ -12,6 +13,7 @@ global using Casper.Console.Research;
 global using Casper.Console.Tests.Data;
 global using Casper.Console.Tests.Integration.Infrastructure;
 global using Casper.Console.Tests.Unit.Infrastructure;
+global using Casper.Console.Workflow;
 global using Casper.Console.Write;
 
 global using GeminiDotnet;

@@ -2,7 +2,7 @@ namespace Casper.Console.Workflow;
 
 internal interface IWorkflowFactory
 {
-  ValueTask<Workflow<Question>> CreateAsync();
+  ValueTask<Workflow<Failure<Question>>> CreateAsync();
 }
 
 internal sealed class WorkflowFactory : IWorkflowFactory
@@ -28,12 +28,12 @@ internal sealed class WorkflowFactory : IWorkflowFactory
     _critic = critic;
   }
 
-  public ValueTask<Workflow<Question>> CreateAsync()
+  public ValueTask<Workflow<Failure<Question>>> CreateAsync()
   {
     // NOTE: Not sure if this is correct...
     // Should it be resolved through DI?
     // Should caller pass it?
-    var user = RequestPort.Create<Question, ChatMessage>("user");
+    var user = RequestPort.Create<Failure<Question>, ChatMessage>("user");
 
     return new WorkflowBuilder(user)
       .AddEdge(user, _interviewer)
@@ -45,6 +45,6 @@ internal sealed class WorkflowFactory : IWorkflowFactory
       .AddEdge(_editor, _critic, static (object? data) => data is Success)
       .AddEdge(_critic, _writer, static (object? data) => data is Failure<Feedback>)
       .WithOutputFrom(_critic)
-      .BuildAsync<Question>();
+      .BuildAsync<Failure<Question>>();
   }
 }
