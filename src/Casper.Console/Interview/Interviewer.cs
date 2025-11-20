@@ -23,20 +23,29 @@ internal sealed class Interviewer :
     CancellationToken cancellationToken
   )
   {
-    var agtRes = await _agent.RunAsync(message.Text, _thread, cancellationToken: cancellationToken);
-    var intrRes = JsonSerializer.Deserialize<InterviewAgentResponse>(agtRes.Text);
+    List<ChatMessage> messages = [message];
+    
+    var agtRes = await _agent.RunAsync(messages, _thread, cancellationToken: cancellationToken);
+    InterviewAgentResponse? interviewerRes = null;
 
-    if (intrRes is null)
+    try
+    {
+      interviewerRes = JsonSerializer.Deserialize<InterviewAgentResponse>(agtRes.Text);
+    }
+    catch (Exception e) when (e is JsonException)
+    {
+    }
+
+    if (interviewerRes is null)
     {
       return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
-    if (intrRes.NeedMoreInfo)
+    if (interviewerRes.NeedMoreInfo)
     {
-      await context.SendMessageAsync(new Question(intrRes.Question), cancellationToken: cancellationToken);
-      return Result.Fail(intrRes.Question);
+      return Result.Fail(new Question(interviewerRes.Question));
     }
 
-    return Result.Ok(intrRes.Topic);
+    return Result.Ok(interviewerRes.Topic);
   }
 }

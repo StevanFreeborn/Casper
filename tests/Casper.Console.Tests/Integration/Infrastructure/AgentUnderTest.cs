@@ -1,9 +1,3 @@
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
-
-using Microsoft.Agents.AI;
-
 namespace Casper.Console.Tests.Integration.Infrastructure;
 
 internal sealed class AgentUnderTest(AIAgent agent, AgentUnderTestOptions options) : AIAgent
@@ -53,6 +47,7 @@ internal sealed class AgentUnderTest(AIAgent agent, AgentUnderTestOptions option
 
     var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{_agent.Id}{ResponsesFileExtension}";
     var filePath = Path.Combine(ResponsesDirectory, fileName);
+    var options = _agent.GetService<AgentRunOptions>();
 
     var content = $"""
     Timestamp: {DateTime.UtcNow:O}

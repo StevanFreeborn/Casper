@@ -18,19 +18,29 @@ internal sealed class Researcher :
   }
 
   public async ValueTask<Result> HandleAsync(
-    Success<TopicBrief> result,
+    Success<TopicBrief> message,
     IWorkflowContext context,
     CancellationToken cancellationToken
   )
   {
-    var agtRes = await _agent.RunAsync(result.Value.ToString(), _thread, cancellationToken: cancellationToken);
-    var research = JsonSerializer.Deserialize<ResearchAgentResponse>(agtRes.Text);
+    List<ChatMessage> messages = [new ChatMessage(ChatRole.User, message.Value.ToString())];
 
-    if (research is null)
+    var agtRes = await _agent.RunAsync(messages, _thread, cancellationToken: cancellationToken);
+    ResearchAgentResponse? researcherRes = null;
+
+    try
+    {
+      researcherRes = JsonSerializer.Deserialize<ResearchAgentResponse>(agtRes.Text);
+    }
+    catch (Exception e) when (e is JsonException)
+    {
+    }
+
+    if (researcherRes is null)
     {
       return Result.Fail("Apologies, I couldn't process your request at this time. Please try again later.");
     }
 
-    return Result.Ok(research.Brief);
+    return Result.Ok(new WriterBrief(message.Value, researcherRes.Brief));
   }
 }

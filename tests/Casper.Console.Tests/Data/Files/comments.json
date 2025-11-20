@@ -1,0 +1,27 @@
+[
+  {
+    "originalSnippet": "'If you know Typescript, learning C# is straight forward as they are very similar' (Reddit)",
+    "issue": "Spelling",
+    "suggestion": "'If you know TypeScript, learning C# is straightforward as they are very similar' (Reddit)"
+  },
+  {
+    "originalSnippet": "Scaffold a new '.NET Minimal API' project and build a simple endpoint",
+    "issue": "Punctuation",
+    "suggestion": "Scaffold a new .NET Minimal API project and build a simple endpoint"
+  },
+  {
+    "originalSnippet": "Its features are extensive",
+    "issue": "Punctuation",
+    "suggestion": "Its features are extensive:"
+  },
+  {
+    "originalSnippet": "IntelliSense: Provides intelligent code completion, parameter info, and quick info, significantly speeding up coding and reducing errors.",
+    "issue": "Structure",
+    "suggestion": "IntelliSense: It provides intelligent code completion, parameter info, and quick info, significantly speeding up coding and reducing errors."
+  },
+  {
+    "originalSnippet": "This foundational object-oriented structure will be instantly recognizeable.",
+    "issue": "Spelling",
+    "suggestion": "This foundational object-oriented structure will be instantly recognizable."
+  }
+]

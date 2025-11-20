@@ -31,7 +31,6 @@ internal sealed partial class ResearchAgent : AgentFacade
     // have to do this in two steps.
     var rawResponse = await Agent.RunAsync(messages, thread, ResearchOptions, cancellationToken);
     var formattedResponse = await Agent.RunAsync(rawResponse.Text, thread, FormattingOptions, cancellationToken);
-    System.Console.WriteLine(formattedResponse.Text);
     return formattedResponse;
   }
 }

@@ -8,7 +8,7 @@ internal class Success : Result
   }
 }
 
-internal class Success<T>(T value) : Success()
+internal sealed class Success<T>(T value) : Success()
 {
   public T Value { get; } = value;
 }

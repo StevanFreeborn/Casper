@@ -1,6 +1,10 @@
 {
   "dotnet.defaultSolution": "Casper.sln",
   "cSpell.words": [
+    "Anders",
+    "Hejlsberg",
+    "Instantiator",
+    "skillset",
     "srvcs"
   ]
 }

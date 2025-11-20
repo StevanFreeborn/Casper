@@ -1,4 +1,3 @@
-
 namespace Casper.Console.Tests.Integration.Infrastructure;
 
 public class TestConfiguration
