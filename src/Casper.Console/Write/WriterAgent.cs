@@ -37,7 +37,7 @@ internal sealed partial class WriterAgent : AgentFacade
     Agent = new ChatClientAgent(client, agentOptions);
   }
 
-  public override Task<AgentRunResponse> RunAsync(
+  public override async Task<AgentRunResponse> RunAsync(
     IEnumerable<ChatMessage> messages,
     AgentThread? thread = null,
     AgentRunOptions? options = null,
@@ -51,7 +51,7 @@ internal sealed partial class WriterAgent : AgentFacade
       _ => throw new NotSupportedException("Unsupported WriterAgent mode.")
     };
 
-    return Agent.RunAsync(messages, thread, runOptions, cancellationToken);
+    return await Agent.RunAsync(messages, thread, runOptions, cancellationToken);
   }
 }
 

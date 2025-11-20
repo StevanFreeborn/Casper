@@ -1,14 +1,14 @@
-using Casper.Console.Workflow;
-
 namespace Casper.Console;
 
 internal sealed class App : IHostedLifecycleService
 {
   private readonly IWorkflowFactory _factory;
+  private readonly IAnsiConsole _console;
 
-  public App(IWorkflowFactory factory)
+  public App(IWorkflowFactory factory, IAnsiConsole console)
   {
     _factory = factory;
+    _console = console;
   }
 
   public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -17,7 +17,7 @@ internal sealed class App : IHostedLifecycleService
 
   public async Task StartedAsync(CancellationToken cancellationToken)
   {
-    var workflow = await _factory.CreateAsync();
+    var workflow = _factory.Create();
 
     await using var run = await InProcessExecution.StreamAsync(
       workflow,
@@ -30,36 +30,42 @@ internal sealed class App : IHostedLifecycleService
       switch (evt)
       {
         case RequestInfoEvent requestInputEvt:
-          var response = AskUserQuestion(requestInputEvt.Request, cancellationToken);
+          var response = await AskUserQuestion(requestInputEvt.Request, cancellationToken);
           await run.SendResponseAsync(response);
           break;
         case WorkflowOutputEvent outputEvt:
-          System.Console.WriteLine($"Workflow completed with result: {outputEvt.Data}");
+          _console.WriteLine($"Workflow output from {outputEvt.SourceId}: {outputEvt.Data}");
           return;
         default:
           break;
       }
     }
+  }
 
-    static ExternalResponse AskUserQuestion(ExternalRequest request, CancellationToken ct)
+  private async Task<ExternalResponse> AskUserQuestion(ExternalRequest request, CancellationToken ct)
+  {
+    if (request.DataIs<Failure<Question>>(out var failure))
     {
-      if (request.DataIs<Failure<Question>>(out var failure))
+      string? answer = null;
+
+      _console.MarkupLineInterpolated($"Casper: {failure.Exception.Message}");
+
+      while (ct.IsCancellationRequested is false && string.IsNullOrWhiteSpace(answer))
       {
-        string? answer = null;
-
-        System.Console.WriteLine($"Casper: {failure.Exception.Message}");
-
-        while (ct.IsCancellationRequested is false && string.IsNullOrWhiteSpace(answer))
+        try
         {
-          System.Console.Write("> ");
-          answer = System.Console.ReadLine();
+          answer = await _console.AskAsync<string>(" > ", ct);
         }
-
-        return request.CreateResponse<ChatMessage>(new(ChatRole.User, answer));
+        catch (Exception ex) when (ex is OperationCanceledException)
+        {
+          break;
+        }
       }
 
-      throw new InvalidOperationException("Unknown request data type");
+      return request.CreateResponse<ChatMessage>(new(ChatRole.User, answer));
     }
+
+    throw new InvalidOperationException("Unknown request data type");
   }
 
   public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

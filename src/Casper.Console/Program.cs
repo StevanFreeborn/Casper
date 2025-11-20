@@ -1,14 +1,9 @@
-﻿using Casper.Console;
-using Casper.Console.Extensions;
-using Casper.Console.Workflow;
-
-using Microsoft.Extensions.Logging;
-
-var host = Host.CreateDefaultBuilder(args)
+﻿var host = Host.CreateDefaultBuilder(args)
   .ConfigureAppConfiguration(static c => c.SetBasePath(AppContext.BaseDirectory))
   .ConfigureLogging(static l => l.ClearProviders())
   .ConfigureServices(static (ctx, srvcs) =>
   {
+    srvcs.AddSingleton(AnsiConsole.Console);
     srvcs.AddSingleton<IFileSystem>(new FileSystem());
     srvcs.Configure<GeminiClientOptions>(ctx.Configuration.GetSection(nameof(GeminiClientOptions)));
     srvcs.AddGeminiClient();

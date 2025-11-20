@@ -1,3 +1,5 @@
+using Spectre.Console;
+
 namespace Casper.Console.Tests.Integration.Workflow;
 
 public class WorkflowFactoryTests
@@ -11,6 +13,7 @@ public class WorkflowFactoryTests
   private readonly Mock<AIAgent> _mockWriterAgent = new();
   private readonly Mock<AIAgent> _mockEditorAgent = new();
   private readonly Mock<AIAgent> _mockCriticAgent = new();
+  private readonly Mock<IAnsiConsole> _mockConsole = new();
   private readonly WorkflowFactory _sut;
 
   public WorkflowFactoryTests()
@@ -19,11 +22,11 @@ public class WorkflowFactoryTests
     _mockFileSystem.SetupGet(fs => fs.Path).Returns(_mockPath.Object);
 
     _sut = new(
-      new(_mockInterviewerAgent.Object),
-      new(_mockResearcherAgent.Object),
-      new(_mockWriterAgent.Object),
-      new(_mockEditorAgent.Object),
-      new(_mockCriticAgent.Object, _mockFileSystem.Object)
+      new(_mockInterviewerAgent.Object, _mockConsole.Object),
+      new(_mockResearcherAgent.Object, _mockConsole.Object),
+      new(_mockWriterAgent.Object, _mockConsole.Object),
+      new(_mockEditorAgent.Object, _mockConsole.Object),
+      new(_mockCriticAgent.Object, _mockFileSystem.Object, _mockConsole.Object)
     );
   }
 
@@ -31,7 +34,7 @@ public class WorkflowFactoryTests
   [Fact]
   public async Task CreateAsync_WhenCalled_ItShouldReturnAWorkflow()
   {
-    var result = await _sut.CreateAsync();
+    var result = _sut.Create();
 
     result.Should().NotBeNull();
     result.StartExecutorId.Should().Be("user");
@@ -46,7 +49,7 @@ public class WorkflowFactoryTests
   [Fact]
   public async Task Workflow_WhenItBeginsWithQuestion_ItShouldRequestInputFromUser()
   {
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
 
     await using var run = await RunWorkflowAsync(workflow);
 
@@ -66,7 +69,7 @@ public class WorkflowFactoryTests
 
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -87,7 +90,7 @@ public class WorkflowFactoryTests
   {
     MockAgentRunResponse(_mockInterviewerAgent, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
 
     await using var run = await RunWorkflowAsync(workflow);
 
@@ -116,7 +119,7 @@ public class WorkflowFactoryTests
       researchResponse: researcherAgentResponse
     );
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -138,7 +141,7 @@ public class WorkflowFactoryTests
 
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -162,7 +165,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockInterviewerAgent, interviewerAgentResponse);
     MockAgentRunResponse(_mockResearcherAgent, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -189,7 +192,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockResearcherAgent, researcherAgentResponse);
     MockAgentRunResponse(_mockWriterAgent, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -216,7 +219,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockWriterAgent, writerAgentResponse);
     MockAgentRunResponse(_mockEditorAgent, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -242,7 +245,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockResearcherAgent, researcherAgentResponse);
     MockAgentRunResponse(_mockWriterAgent, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -271,7 +274,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockWriterAgent, writerAgentResponse);
     MockAgentRunResponse(_mockEditorAgent, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -300,7 +303,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockWriterAgent, writerAgentResponse);
     MockAgentRunResponses(_mockEditorAgent, editorAgentResponse, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -338,7 +341,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockEditorAgent, editorAgentResponse);
     MockAgentRunResponse(_mockCriticAgent, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -369,7 +372,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockEditorAgent, editorAgentResponse);
     MockAgentRunResponse(_mockCriticAgent, string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -401,7 +404,7 @@ public class WorkflowFactoryTests
     MockAgentRunResponse(_mockEditorAgent, editorAgentResponse);
     MockAgentRunResponse(_mockCriticAgent, criticAgentResponse);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -443,7 +446,7 @@ public class WorkflowFactoryTests
 
     _mockPath.Setup(p => p.Combine(It.IsAny<string>(), It.IsAny<string>())).Returns(string.Empty);
 
-    var workflow = await _sut.CreateAsync();
+    var workflow = _sut.Create();
     await using var run = await RunWorkflowAsync(workflow);
     await ResumeWorkflowAsync(run, new(ChatRole.User, TestTopic));
 
@@ -597,7 +600,7 @@ public class WorkflowFactoryTests
     await run.ResumeAsync([res], TestContext.Current.CancellationToken);
   }
 
-  private static ValueTask<Run> RunWorkflowAsync(Workflow<Failure<Question>> workflow)
+  private static ValueTask<Run> RunWorkflowAsync(Microsoft.Agents.AI.Workflows.Workflow workflow)
   {
     return InProcessExecution.RunAsync(
       workflow,

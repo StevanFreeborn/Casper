@@ -15,6 +15,8 @@ internal class Failure : Result
     IsSuccess = false;
     Exception = new Exception(message);
   }
+
+  public override string ToString() => Exception.ToString();
 }
 
 internal sealed class Failure<T> : Failure where T : Exception

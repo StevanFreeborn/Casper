@@ -2,7 +2,7 @@ namespace Casper.Console.Workflow;
 
 internal interface IWorkflowFactory
 {
-  ValueTask<Workflow<Failure<Question>>> CreateAsync();
+  Microsoft.Agents.AI.Workflows.Workflow Create();
 }
 
 internal sealed class WorkflowFactory : IWorkflowFactory
@@ -28,7 +28,7 @@ internal sealed class WorkflowFactory : IWorkflowFactory
     _critic = critic;
   }
 
-  public ValueTask<Workflow<Failure<Question>>> CreateAsync()
+  public Microsoft.Agents.AI.Workflows.Workflow Create()
   {
     // NOTE: Not sure if this is correct...
     // Should it be resolved through DI?
@@ -44,7 +44,6 @@ internal sealed class WorkflowFactory : IWorkflowFactory
       .AddEdge(_editor, _writer, static (object? data) => data is Failure<Feedback>)
       .AddEdge(_editor, _critic, static (object? data) => data is Success)
       .AddEdge(_critic, _writer, static (object? data) => data is Failure<Feedback>)
-      .WithOutputFrom(_critic)
-      .BuildAsync<Failure<Question>>();
+      .Build();
   }
 }
