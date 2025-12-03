@@ -1,3 +1,5 @@
+using Spectre.Console.Advanced;
+
 namespace Casper.Console;
 
 internal sealed class App : IHostedLifecycleService
@@ -33,8 +35,10 @@ internal sealed class App : IHostedLifecycleService
           var response = await AskUserQuestion(requestInputEvt.Request, cancellationToken);
           await run.SendResponseAsync(response);
           break;
-        case WorkflowOutputEvent outputEvt:
-          _console.WriteLine($"Workflow output from {outputEvt.SourceId}: {outputEvt.Data}");
+        case BlogPostSavedEvent savedEvent:
+          _console.WriteLine("Casper: Here you go. Give this draft a review.");
+          var panel = new Panel($"[blue link={savedEvent.FilePath}]{savedEvent.FilePath.AbsoluteUri.EscapeMarkup()}[/]");
+          _console.Write(panel);
           return;
         default:
           break;

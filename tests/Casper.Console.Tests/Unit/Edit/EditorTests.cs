@@ -6,7 +6,7 @@ public class EditorTest : ExecutorTest
 
   public EditorTest()
   {
-    _sut = new(MockAgent.Object);
+    _sut = new(MockAgent.Object, MockConsole.Object);
   }
 
   [Theory]

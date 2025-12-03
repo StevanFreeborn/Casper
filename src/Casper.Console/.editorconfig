@@ -3,3 +3,6 @@
 dotnet_diagnostic.CA2007.severity = none
 
 csharp_style_prefer_primary_constructors = false
+
+# Default severity for all analyzer diagnostics
+dotnet_analyzer_diagnostic.severity = silent

@@ -55,10 +55,19 @@ internal sealed class Critic :
           return Result.Fail(new Feedback(message.Value, criticRes.Comments));
         }
 
-        var filePath = _fileSystem.Path.Combine(AppContext.BaseDirectory, $"{message.Value.Title}.md");
+        char[] invalidChars = [..Path.GetInvalidFileNameChars(), ' ', ','];
+#pragma warning disable CA1308
+        var fileName = new string([.. message.Value.Title.Select(c => invalidChars.Contains(c) ? '_' : c)]).ToLowerInvariant().Trim();
+#pragma warning restore CA1308
+        var filePath = _fileSystem.Path.Combine(AppContext.BaseDirectory, $"{fileName}.md");
         await _fileSystem.File.WriteAllTextAsync(filePath, message.Value.ToMarkdown(), cancellationToken);
-        _console.WriteLine(message.Value.ToMarkdown());
+        await context.AddEventAsync(new BlogPostSavedEvent(filePath));
         return Result.Ok();
       });
   }
+}
+
+internal sealed class BlogPostSavedEvent(string filePath) : WorkflowEvent
+{
+  public Uri FilePath { get; } = new Uri(filePath);
 }

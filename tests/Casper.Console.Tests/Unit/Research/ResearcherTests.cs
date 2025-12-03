@@ -6,7 +6,7 @@ public class ResearcherTests : ExecutorTest
 
   public ResearcherTests()
   {
-    _sut = new(MockAgent.Object);
+    _sut = new(MockAgent.Object, MockConsole.Object);
   }
 
   [Theory]

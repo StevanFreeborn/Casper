@@ -1,5 +1,3 @@
-using System.IO.Abstractions;
-
 namespace Casper.Console.Tests.Unit.Critique;
 
 public class CriticTests : ExecutorTest
@@ -9,7 +7,7 @@ public class CriticTests : ExecutorTest
 
   public CriticTests()
   {
-    _sut = new(MockAgent.Object, _mockFileSystem.Object);
+    _sut = new(MockAgent.Object, _mockFileSystem.Object, MockConsole.Object);
   }
 
   [Theory]

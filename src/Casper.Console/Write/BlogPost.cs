@@ -40,7 +40,7 @@ internal sealed record BlogPost(
   {
     var sb = new StringBuilder();
 
-    sb.Append("---");
+    sb.AppendLine("---");
     sb.AppendLine(CultureInfo.InvariantCulture, $"title: {Title}");
     sb.AppendLine(CultureInfo.InvariantCulture, $"description: {OpenGraphDescription}");
     sb.AppendLine(CultureInfo.InvariantCulture, $"slug: {Slug}");
